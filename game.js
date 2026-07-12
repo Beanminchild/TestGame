@@ -1,16 +1,16 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-const cols = 12;
-const rows = 12;
-const TILE_W = 64;
+const cols = 24;
+const rows = 24;
+const TILE_W = 64; 
 const TILE_H = 32;
 const mapOriginX = canvas.width / 2;
 const mapOriginY = 110;
 
 const keys = new Set();
 let lastMoveTime = 0;
-const moveInterval = 110;
+const moveInterval = 60; //was 110
 
 const character = {
   col: Math.floor(cols / 2),
@@ -20,15 +20,17 @@ const character = {
   stepCounter: 0
 };
 
+const INV_SQRT2 = 1 / Math.sqrt(2); // 0.7071067811865475 approximatets half speed for diagonal movment values
+
 const DIRECTION_VECTORS = [
-  { dx: 1, dy: 0 },
-  { dx: 1, dy: 1 },
-  { dx: 0, dy: 1 },
-  { dx: -1, dy: 1 },
+  { dx: .5, dy: 0 },
+  { dx: INV_SQRT2, dy: INV_SQRT2 },
+  { dx: 0, dy: .5 },
+  { dx: -.5, dy: .5 },
   { dx: -1, dy: 0 },
-  { dx: -1, dy: -1 },
-  { dx: 0, dy: -1 },
-  { dx: 1, dy: -1 }
+  { dx: -.5, dy: -.5 },
+  { dx: 0, dy: -.5 },
+  { dx: .5, dy: -.5 }
 ];
 
 const WALK_POSES = [
@@ -216,27 +218,37 @@ function drawScene() {
   drawCharacter();
 }
 
-function updateCharacterFromControls() {
-  const now = performance.now();
+
+let lastFrameTime = performance.now();
+let moveAccumulator = 0;
+const moveStepMs = 60;
+
+function updateCharacterFromControls(deltaMs) {
   const dx = (keys.has("ArrowRight") ? 1 : 0) - (keys.has("ArrowLeft") ? 1 : 0);
   const dy = (keys.has("ArrowDown") ? 1 : 0) - (keys.has("ArrowUp") ? 1 : 0);
 
   if (dx !== 0 || dy !== 0) {
-    if (now - lastMoveTime >= moveInterval) {
+    moveAccumulator += deltaMs;
+
+    while (moveAccumulator >= moveStepMs) {
       character.col += dx;
       character.row += dy;
       clampCharacter();
       character.dir = getDirectionIndex(dx, dy);
-      character.walkFrame += 1;
-      lastMoveTime = now;
+      character.walkFrame = (character.walkFrame + 1) % 2;
+      moveAccumulator -= moveStepMs;
     }
   } else {
     character.walkFrame = 0;
   }
 }
 
-function loop() {
-  updateCharacterFromControls();
+
+function loop(timestamp) {
+  const deltaMs = Math.min(timestamp - lastFrameTime, 32);
+  lastFrameTime = timestamp;
+
+  updateCharacterFromControls(deltaMs);
   drawScene();
   requestAnimationFrame(loop);
 }
