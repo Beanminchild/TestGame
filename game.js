@@ -1,34 +1,4 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Isometric Grass Field Prototype</title>
-  <style>
-    html, body {
-      margin: 0;
-      height: 100%;
-      background: #0f1410;
-      display: grid;
-      place-items: center;
-      font-family: system-ui, sans-serif;
-    }
-
-    canvas {
-      width: min(960px, 96vw);
-      height: auto;
-      image-rendering: auto;
-      display: block;
-      border: 1px solid #243026;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.4);
-    }
-  </style>
-</head>
-<body>
-  <canvas id="game" width="960" height="640"></canvas>
-
-  <script>
-    const canvas = document.getElementById("game");
+ const canvas = document.getElementById("game");
     const ctx = canvas.getContext("2d");
 
     // --- editable field settings ---
@@ -228,6 +198,3 @@
 
     drawScene();
     requestAnimationFrame(loop);
-  </script>
-</body>
-</html>
