@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Isometric Grass Field Prototype</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #0f1410;
+      display: grid;
+      place-items: center;
+      font-family: system-ui, sans-serif;
+    }
+
+    canvas {
+      width: min(960px, 96vw);
+      height: auto;
+      image-rendering: auto;
+      display: block;
+      border: 1px solid #243026;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game" width="960" height="640"></canvas>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+
+    // --- editable field settings ---
+    const cols = 12;
+    const rows = 12;
+    const TILE_W = 64;
+    const TILE_H = 32;
+
+    // Center the map on the canvas.
+    const mapOriginX = canvas.width / 2;
+    const mapOriginY = 110;
+
+    // Character starts in the middle of the field.
+    const character = {
+      col: Math.floor(cols / 2),
+      row: Math.floor(rows / 2),
+      dir: 0 // 0..7, one pose per direction
+    };
+
+    const keys = new Set();
+    let lastMoveTime = 0;
+    const moveInterval = 110;
+
+    const DIRECTION_NAMES = [
+      "E", "SE", "S", "SW", "W", "NW", "N", "NE"
+    ];
+
+    function isoToScreen(col, row) {
+      return {
+        x: mapOriginX + (col - row) * (TILE_W / 2),
+        y: mapOriginY + (col + row) * (TILE_H / 2)
+      };
+    }
+
+    function clampCharacter() {
+      character.col = Math.max(0, Math.min(cols - 1, character.col));
+      character.row = Math.max(0, Math.min(rows - 1, character.row));
+    }
+
+    function getDirectionIndex(dx, dy) {
+      if (dx > 0 && dy === 0) return 0; // E
+      if (dx > 0 && dy > 0) return 1;   // SE
+      if (dx === 0 && dy > 0) return 2; // S
+      if (dx < 0 && dy > 0) return 3;   // SW
+      if (dx < 0 && dy === 0) return 4; // W
+      if (dx < 0 && dy < 0) return 5;   // NW
+      if (dx === 0 && dy < 0) return 6; // N
+      if (dx > 0 && dy < 0) return 7;   // NE
+      return character.dir;
+    }
+
+    function drawGrassTile(col, row) {
+      const p = isoToScreen(col, row);
+
+      const shade = (col + row) % 3;
+      let color = "#5d8f42";
+      if (shade === 1) color = "#6a9d4d";
+      if (shade === 2) color = "#56813b";
+
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y - TILE_H / 2);
+      ctx.lineTo(p.x + TILE_W / 2, p.y);
+      ctx.lineTo(p.x, p.y + TILE_H / 2);
+      ctx.lineTo(p.x - TILE_W / 2, p.y);
+      ctx.closePath();
+
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.strokeStyle = "#2d4a22";
+      ctx.lineWidth = 1.25;
+      ctx.stroke();
+
+      // Simple grass texture / skyline detail.
+      ctx.fillStyle = "rgba(255,255,255,0.08)";
+      ctx.fillRect(p.x - 4, p.y - 4, 8, 2);
+      ctx.fillStyle = "rgba(0,0,0,0.10)";
+      ctx.fillRect(p.x - 6, p.y + 2, 12, 1);
+    }
+
+    function createCharacterSpriteAtlas() {
+      const atlas = [];
+      for (let dir = 0; dir < 8; dir++) {
+        const spriteCanvas = document.createElement("canvas");
+        spriteCanvas.width = 64;
+        spriteCanvas.height = 64;
+        const g = spriteCanvas.getContext("2d");
+
+        // Shadow
+        g.fillStyle = "rgba(0,0,0,0.35)";
+        g.beginPath();
+        g.ellipse(32, 50, 18, 8, 0, 0, Math.PI * 2);
+        g.fill();
+
+        // Body / limb pose, using slight direction offsets to read as "8-way" placeholder art
+        const pose = [
+          [0, 0], [4, 2], [0, 0], [-4, 2], [0, 0], [-4, -2], [0, 0], [4, -2]
+        ][dir];
+
+        const [armOffset, legOffset] = pose;
+
+        // Body
+        g.fillStyle = "#4a86c5";
+        g.fillRect(24, 16, 16, 18);
+
+        // Head
+        g.fillStyle = "#ffd9b3";
+        g.beginPath();
+        g.arc(32, 12, 8, 0, Math.PI * 2);
+        g.fill();
+
+        // Legs
+        g.strokeStyle = "#2c3a4b";
+        g.lineWidth = 4;
+        g.beginPath();
+        g.moveTo(28, 34);
+        g.lineTo(28 + legOffset, 42 + legOffset * 0.4);
+        g.moveTo(36, 34);
+        g.lineTo(36 - legOffset, 42 - legOffset * 0.4);
+        g.stroke();
+
+        // Arms
+        g.beginPath();
+        g.moveTo(24, 22);
+        g.lineTo(18 + armOffset, 27 + armOffset * 0.3);
+        g.moveTo(40, 22);
+        g.lineTo(46 - armOffset, 27 - armOffset * 0.3);
+        g.stroke();
+
+        // "3D" outline / highlight for a simple pseudo-3D look
+        g.strokeStyle = "rgba(255,255,255,0.35)";
+        g.strokeRect(24, 16, 16, 18);
+
+        atlas.push(spriteCanvas);
+      }
+      return atlas;
+    }
+
+    const spriteAtlas = createCharacterSpriteAtlas();
+
+    function drawCharacter() {
+      const p = isoToScreen(character.col, character.row);
+      const sprite = spriteAtlas[character.dir];
+      ctx.drawImage(sprite, p.x - 32, p.y - 56, 64, 64);
+    }
+
+    function drawScene() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw tiles in sorted order for correct isometric depth.
+      const list = [];
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          list.push([c, r]);
+        }
+      }
+      list.sort((a, b) => (a[0] + a[1]) - (b[0] + b[1]));
+
+      for (const [c, r] of list) {
+        drawGrassTile(c, r);
+      }
+
+      drawCharacter();
+    }
+
+    function updateCharacterFromControls() {
+      const now = performance.now();
+      if (now - lastMoveTime < moveInterval) return;
+
+      const dx = (keys.has("ArrowRight") ? 1 : 0) - (keys.has("ArrowLeft") ? 1 : 0);
+      const dy = (keys.has("ArrowDown") ? 1 : 0) - (keys.has("ArrowUp") ? 1 : 0);
+
+      if (dx !== 0 || dy !== 0) {
+        character.col += dx;
+        character.row += dy;
+        clampCharacter();
+        character.dir = getDirectionIndex(dx, dy);
+        lastMoveTime = now;
+      }
+    }
+
+    function loop() {
+      updateCharacterFromControls();
+      drawScene();
+      requestAnimationFrame(loop);
+    }
+
+    window.addEventListener("keydown", (event) => {
+      if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) {
+        event.preventDefault();
+        keys.add(event.key);
+      }
+    });
+
+    window.addEventListener("keyup", (event) => {
+      keys.delete(event.key);
+    });
+
+    drawScene();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
