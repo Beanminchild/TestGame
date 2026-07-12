@@ -20,22 +20,28 @@ const character = {
   stepCounter: 0
 };
 
-const INV_SQRT2 = 1 / Math.sqrt(2); // 0.7071067811865475 approximatets half speed for diagonal movment values
+const INV_SQRT2 = 1 / Math.sqrt(2);
 
 const DIRECTION_VECTORS = [
-  { dx: .5, dy: 0 },
+  { dx: 1, dy: 0 },
   { dx: INV_SQRT2, dy: INV_SQRT2 },
-  { dx: 0, dy: .5 },
-  { dx: -.5, dy: .5 },
+  { dx: 0, dy: 1 },
+  { dx: -INV_SQRT2, dy: INV_SQRT2 },
   { dx: -1, dy: 0 },
-  { dx: -.5, dy: -.5 },
-  { dx: 0, dy: -.5 },
-  { dx: .5, dy: -.5 }
+  { dx: -INV_SQRT2, dy: -INV_SQRT2 },
+  { dx: 0, dy: -1 },
+  { dx: INV_SQRT2, dy: -INV_SQRT2 }
 ];
+
+const moveStepSize = 0.25; // lower = slower, higher = faster
 
 const WALK_POSES = [
   { armSwing: -7, legSwing: 8, torsoShiftX: 0, torsoShiftY: 0 },
-  { armSwing: 7, legSwing: -8, torsoShiftX: 0, torsoShiftY: 1 }
+  { armSwing: -3.5, legSwing: 4, torsoShiftX: 0, torsoShiftY: 0.5 },
+  { armSwing: 0, legSwing: 0, torsoShiftX: 0, torsoShiftY: 1 },
+  { armSwing: 3.5, legSwing: -4, torsoShiftX: 0, torsoShiftY: 0.5 },
+  { armSwing: 7, legSwing: -8, torsoShiftX: 0, torsoShiftY: 0 },
+  
 ];
 
 const DIRECTION_STYLES = [
@@ -231,10 +237,14 @@ function updateCharacterFromControls(deltaMs) {
     moveAccumulator += deltaMs;
 
     while (moveAccumulator >= moveStepMs) {
-      character.col += dx;
-      character.row += dy;
+      const dirIndex = getDirectionIndex(dx, dy);
+      const vector = DIRECTION_VECTORS[dirIndex];
+
+      character.col += vector.dx * moveStepSize;
+      character.row += vector.dy * moveStepSize;
       clampCharacter();
-      character.dir = getDirectionIndex(dx, dy);
+
+      character.dir = dirIndex;
       character.walkFrame = (character.walkFrame + 1) % 2;
       moveAccumulator -= moveStepMs;
     }
@@ -243,12 +253,39 @@ function updateCharacterFromControls(deltaMs) {
   }
 }
 
+// Replace the fixed mapOriginX and mapOriginY with dynamic camera values
+let cameraX = canvas.width / 2;
+let cameraY = 110;
+
+function updateCamera() {
+  // Convert character position to screen coordinates
+  const charScreenPos = {
+    x: (character.col - character.row) * (TILE_W / 2),
+    y: (character.col + character.row) * (TILE_H / 2)
+  };
+  
+  // Keep character centered on screen
+  cameraX = canvas.width / 2 - charScreenPos.x;
+  cameraY = canvas.height / 2 - charScreenPos.y;
+}
+
+// Update isoToScreen to use the dynamic camera
+function isoToScreen(col, row) {
+  return {
+    x: cameraX + (col - row) * (TILE_W / 2),
+    y: cameraY + (col + row) * (TILE_H / 2)
+  };
+}
+
+
+
 
 function loop(timestamp) {
   const deltaMs = Math.min(timestamp - lastFrameTime, 32);
   lastFrameTime = timestamp;
 
   updateCharacterFromControls(deltaMs);
+  updateCamera();
   drawScene();
   requestAnimationFrame(loop);
 }
