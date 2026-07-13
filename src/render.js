@@ -1,4 +1,12 @@
-import { TILE_W, TILE_H, cols, rows, WALK_POSES, DIRECTION_STYLES, PLACEHOLDER_LOOK } from "./constants.js";
+import {
+  TILE_W,
+  TILE_H,
+  cols,
+  rows,
+  WALK_POSES,
+  DIRECTION_STYLES,
+  PLACEHOLDER_LOOK
+} from "./constants.js";
 
 export function isoToScreen(col, row, camera) {
   return {
@@ -118,7 +126,69 @@ export function drawCharacter(ctx, character, spriteBank, camera) {
   ctx.drawImage(sprite, p.x - 32, p.y - 58, 64, 64);
 }
 
-export function drawScene(ctx, canvas, character, spriteBank, camera) {
+export function drawMin(ctx, min, camera) {
+  const p = isoToScreen(min.col, min.row, camera);
+
+  ctx.save();
+  ctx.translate(p.x, p.y - 6);
+
+  ctx.fillStyle = min.state === "following" ? "#f7c873" : "#8c5b2b";
+  ctx.beginPath();
+  ctx.arc(0, 0, 8, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#3a210f";
+  ctx.fillRect(-3, -1, 6, 2);
+  ctx.restore();
+}
+
+export function drawButton(ctx, button, camera) {
+  const p = isoToScreen(button.col, button.row, camera);
+
+  ctx.save();
+  ctx.translate(p.x, p.y - 6);
+
+  ctx.fillStyle = button.pressed ? "#48c774" : "#c74e4e";
+  ctx.beginPath();
+  ctx.moveTo(0, -14);
+  ctx.lineTo(16, -4);
+  ctx.lineTo(0, 6);
+  ctx.lineTo(-16, -4);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "12px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(button.pressed ? "true" : "false", 0, 2);
+  ctx.restore();
+}
+
+export function drawCursor(ctx, cursor, camera) {
+  if (!cursor) return;
+
+  const p = isoToScreen(cursor.col, cursor.row, camera);
+
+  ctx.save();
+  ctx.translate(p.x, p.y - 6);
+
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(0, 0, 7, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(-5, 0);
+  ctx.lineTo(5, 0);
+  ctx.moveTo(0, -5);
+  ctx.lineTo(0, 5);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+export function drawScene(ctx, canvas, character, spriteBank, camera, button, mins, cursor) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   const order = [];
@@ -134,5 +204,14 @@ export function drawScene(ctx, canvas, character, spriteBank, camera) {
     drawGrassTile(ctx, c, r, camera);
   }
 
+  drawButton(ctx, button, camera);
+
+  for (const min of mins) {
+    if (min.state !== "delivered") {
+      drawMin(ctx, min, camera);
+    }
+  }
+
+  drawCursor(ctx, cursor, camera);
   drawCharacter(ctx, character, spriteBank, camera);
 }

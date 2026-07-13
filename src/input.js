@@ -1,13 +1,24 @@
 export function setupInput(keys = new Set()) {
   window.addEventListener("keydown", (event) => {
-    if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) {
+    const key = event.code || event.key;
+    const handledKeys = new Set([
+      "ArrowLeft",
+      "ArrowRight",
+      "ArrowUp",
+      "ArrowDown",
+      "Space",
+      "KeyE",
+      "KeyF"
+    ]);
+
+    if (handledKeys.has(key)) {
       event.preventDefault();
-      keys.add(event.key);
+      keys.add(key);
     }
   });
 
   window.addEventListener("keyup", (event) => {
-    keys.delete(event.key);
+    keys.delete(event.code || event.key);
   });
 
   return keys;

@@ -6,6 +6,16 @@ export const TILE_H = 32;
 export const moveStepSize = 0.25;
 export const moveStepMs = 60;
 
+export const BUTTON_REQUIRED_MIN = 3;
+export const MIN_SPAWN_COUNT = 5;
+export const MIN_INTERACTION_RADIUS = 1.2;
+export const BUTTON_INTERACTION_RADIUS = 1.2;
+
+export const THROW_TARGET_RADIUS = 2.4;
+export const THROW_SUCCESS_BASE = 0.5;
+export const THROW_SUCCESS_PER_DISTANCE = 0.08;
+export const THROW_MAX_DISTANCE = 8;
+
 export const INV_SQRT2 = 1 / Math.sqrt(2);
 
 export const DIRECTION_VECTORS = [
