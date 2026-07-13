@@ -44,9 +44,18 @@ function moveToward(min, targetCol, targetRow, speed = 0.12) {
   const distance = Math.hypot(dx, dy);
 
   if (distance > 0.01) {
-    min.col += (dx / Math.max(distance, 0.0001)) * speed;
-    min.row += (dy / Math.max(distance, 0.0001)) * speed;
+    const step = Math.min(speed, distance);
+    min.col += (dx / distance) * step;
+    min.row += (dy / distance) * step;
   }
+}
+
+function settleMin(min) {
+  min.state = "loose";
+  min.target = null;
+  min.throwOrigin = null;
+  min.throwDistance = 0;
+  min.landed = true;
 }
 
 export function updateMins(character, mins, button) {
@@ -63,40 +72,38 @@ export function updateMins(character, mins, button) {
   });
 
   mins.forEach((min) => {
-    if (min.state === "thrown") {
-      const target = min.target || { col: button.col, row: button.row };
-      moveToward(min, target.col, target.row, 0.14);
+    if (min.state !== "thrown") return;
 
-      if (min.throwOrigin) {
-        min.throwDistance = Math.hypot(
-          min.col - min.throwOrigin.col,
-          min.row - min.throwOrigin.row
-        );
+    const target = min.target || { col: button.col, row: button.row };
+    moveToward(min, target.col, target.row, 0.14);
+
+    if (min.throwOrigin) {
+      min.throwDistance = Math.hypot(
+        min.col - min.throwOrigin.col,
+        min.row - min.throwOrigin.row
+      );
+    }
+
+    const distanceToTarget = Math.hypot(min.col - target.col, min.row - target.row);
+    const distanceToButton = Math.hypot(min.col - button.col, min.row - button.row);
+    const reachedTarget = distanceToTarget <= 0.18;
+    const reachedMaxDistance = (min.throwDistance ?? 0) >= THROW_MAX_DISTANCE;
+
+    if (distanceToButton <= THROW_TARGET_RADIUS && (min.throwDistance ?? 0) <= THROW_MAX_DISTANCE) {
+      const successChance = Math.min(
+        0.95,
+        THROW_SUCCESS_BASE + THROW_SUCCESS_PER_DISTANCE * (1 - distanceToButton / THROW_TARGET_RADIUS)
+      );
+      const succeeded = Math.random() < successChance;
+
+      if (succeeded) {
+        button.minCount += 1;
+        button.pressed = button.minCount >= BUTTON_REQUIRED_MIN;
       }
+    }
 
-      const distanceToButton = Math.hypot(min.col - button.col, min.row - button.row);
-      const reachedMaxDistance = (min.throwDistance ?? 0) >= THROW_MAX_DISTANCE;
-
-      if (distanceToButton <= THROW_TARGET_RADIUS && (min.throwDistance ?? 0) <= THROW_MAX_DISTANCE) {
-        const successChance = Math.min(
-          0.95,
-          THROW_SUCCESS_BASE + THROW_SUCCESS_PER_DISTANCE * (1 - distanceToButton / THROW_TARGET_RADIUS)
-        );
-        const succeeded = Math.random() < successChance;
-
-        if (succeeded) {
-          button.minCount += 1;
-          button.pressed = button.minCount >= BUTTON_REQUIRED_MIN;
-        }
-      }
-
-      if (distanceToButton <= THROW_TARGET_RADIUS || reachedMaxDistance) {
-        min.state = "loose";
-        min.target = null;
-        min.throwDistance = 0;
-        min.landed = true;
-        min.throwOrigin = null;
-      }
+    if (reachedTarget || distanceToButton <= THROW_TARGET_RADIUS || reachedMaxDistance) {
+      settleMin(min);
     }
   });
 }
