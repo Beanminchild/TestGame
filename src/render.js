@@ -5,7 +5,9 @@ import {
   rows,
   WALK_POSES,
   DIRECTION_STYLES,
-  PLACEHOLDER_LOOK
+  PLACEHOLDER_LOOK,
+  TILE_TYPES,
+  PLANT_STAGES
 } from "./constants.js";
 
 export function isoToScreen(col, row, camera) {
@@ -37,6 +39,74 @@ function drawGrassTile(ctx, col, row, camera) {
   ctx.fillRect(p.x - 8, p.y - 4, 16, 2);
   ctx.fillStyle = "rgba(0,0,0,0.08)";
   ctx.fillRect(p.x - 10, p.y + 3, 20, 1);
+}
+
+function drawDirtTile(ctx, col, row, camera) {
+  const p = isoToScreen(col, row, camera);
+
+  ctx.beginPath();
+  ctx.moveTo(p.x, p.y - TILE_H / 2);
+  ctx.lineTo(p.x + TILE_W / 2, p.y);
+  ctx.lineTo(p.x, p.y + TILE_H / 2);
+  ctx.lineTo(p.x - TILE_W / 2, p.y);
+  ctx.closePath();
+
+  ctx.fillStyle = "#8b5a2b";
+  ctx.fill();
+  ctx.strokeStyle = "#6a421f";
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+
+  ctx.fillStyle = "rgba(255,255,255,0.05)";
+  ctx.fillRect(p.x - 8, p.y - 3, 16, 2);
+}
+
+function drawPlantOverlay(ctx, tile, col, row, camera) {
+  if (!tile.planted) return;
+
+  const p = isoToScreen(col, row, camera);
+
+  if (tile.watered) {
+    ctx.fillStyle = "#6ec5ff";
+    ctx.beginPath();
+    ctx.moveTo(p.x + 4, p.y - 8);
+    ctx.lineTo(p.x + 9, p.y - 4);
+    ctx.lineTo(p.x + 3, p.y - 2);
+    ctx.lineTo(p.x - 2, p.y - 6);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  ctx.save();
+  ctx.translate(p.x, p.y - 8);
+
+  if (tile.stage === PLANT_STAGES.SEED) {
+    ctx.strokeStyle = "#2f6b2f";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(0, -6);
+    ctx.stroke();
+  } else if (tile.stage === PLANT_STAGES.SPROUT) {
+    ctx.strokeStyle = "#2f6b2f";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-4, -8);
+    ctx.moveTo(0, 0);
+    ctx.lineTo(4, -8);
+    ctx.stroke();
+  } else if (tile.stage === PLANT_STAGES.CROP) {
+    ctx.fillStyle = "#4a8f3b";
+    ctx.beginPath();
+    ctx.arc(0, -8, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#d9b44a";
+    ctx.fillRect(-2, -2, 4, 6);
+  }
+
+  ctx.restore();
 }
 
 function buildSpriteFrame(directionIndex, frameIndex) {
@@ -188,7 +258,7 @@ export function drawCursor(ctx, cursor, camera) {
   ctx.restore();
 }
 
-export function drawScene(ctx, canvas, character, spriteBank, camera, button, mins, cursor) {
+export function drawScene(ctx, canvas, character, spriteBank, camera, button, mins, cursor, world) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   const order = [];
@@ -201,7 +271,14 @@ export function drawScene(ctx, canvas, character, spriteBank, camera, button, mi
   order.sort((a, b) => (a[0] + a[1]) - (b[0] + b[1]));
 
   for (const [c, r] of order) {
-    drawGrassTile(ctx, c, r, camera);
+    const tile = world.tiles[r][c];
+    if (tile.type === TILE_TYPES.DIRT) {
+      drawDirtTile(ctx, c, r, camera);
+    } else {
+      drawGrassTile(ctx, c, r, camera);
+    }
+
+    drawPlantOverlay(ctx, tile, c, r, camera);
   }
 
   drawButton(ctx, button, camera);

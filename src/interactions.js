@@ -1,7 +1,3 @@
-//TO DO FIX IT SO THEY COME BACK AFTER INTERACTINGV WITH A BUTTON AND ALOS THEY WALK TOWARD THE BUTTON AUTOMATIALLY 
-
-
-
 import {
   BUTTON_REQUIRED_MIN,
   MIN_SPAWN_COUNT,
@@ -11,7 +7,14 @@ import {
   THROW_TARGET_RADIUS,
   THROW_SUCCESS_BASE,
   THROW_SUCCESS_PER_DISTANCE,
-  THROW_MAX_DISTANCE
+  THROW_MAX_DISTANCE,
+  cols,
+  rows,
+  TOOL_TYPES,
+  TILE_TYPES,
+  PLANT_STAGES,
+  GROWTH_DURATION_MIN,
+  GROWTH_DURATION_MAX
 } from "./constants.js";
 
 export function createButton() {
@@ -36,9 +39,22 @@ export function createWorld() {
     landed: false
   }));
 
+  const tiles = Array.from({ length: rows }, (_, row) =>
+    Array.from({ length: cols }, (_, col) => ({
+      type: TILE_TYPES.GRASS,
+      planted: false,
+      watered: false,
+      growth: 0,
+      growDuration: GROWTH_DURATION_MIN + Math.random() * (GROWTH_DURATION_MAX - GROWTH_DURATION_MIN),
+      stage: PLANT_STAGES.EMPTY
+    }))
+  );
+
   return {
     button: createButton(),
-    mins
+    mins,
+    tiles,
+    selectedTool: TOOL_TYPES.HOE
   };
 }
 
@@ -168,4 +184,69 @@ export function throwMin(character, mins, button, cursor = null) {
   availableMin.landed = false;
 
   return availableMin;
+}
+
+function clampTileValue(value, max) {
+  return Math.max(0, Math.min(max - 1, Math.floor(value)));
+}
+
+export function useToolAtCursor(world, cursor) {
+  if (!cursor) return false;
+
+  const col = clampTileValue(cursor.col, cols);
+  const row = clampTileValue(cursor.row, rows);
+  const tile = world.tiles[row][col];
+
+  if (!tile) return false;
+
+  if (world.selectedTool === TOOL_TYPES.HOE) {
+    tile.type = TILE_TYPES.DIRT;
+    tile.planted = false;
+    tile.watered = false;
+    tile.growth = 0;
+    tile.stage = PLANT_STAGES.EMPTY;
+    return true;
+  }
+
+  if (world.selectedTool === TOOL_TYPES.SEEDS) {
+    if (tile.type === TILE_TYPES.DIRT && !tile.planted) {
+      tile.planted = true;
+      tile.watered = false;
+      tile.growth = 0;
+      tile.growDuration = GROWTH_DURATION_MIN + Math.random() * (GROWTH_DURATION_MAX - GROWTH_DURATION_MIN);
+      tile.stage = PLANT_STAGES.SEED;
+      return true;
+    }
+    return false;
+  }
+
+  if (world.selectedTool === TOOL_TYPES.WATERING_CAN) {
+    if (tile.planted) {
+      tile.watered = true;
+      return true;
+    }
+    return false;
+  }
+
+  return false;
+}
+
+export function updateWorld(world, deltaMs) {
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const tile = world.tiles[row][col];
+
+      if (!tile.planted || !tile.watered || tile.stage === PLANT_STAGES.CROP) continue;
+
+      tile.growth += deltaMs;
+
+      if (tile.growth >= tile.growDuration) {
+        tile.stage = PLANT_STAGES.CROP;
+      } else if (tile.growth >= tile.growDuration * 0.6) {
+        tile.stage = PLANT_STAGES.SPROUT;
+      } else {
+        tile.stage = PLANT_STAGES.SEED;
+      }
+    }
+  }
 }

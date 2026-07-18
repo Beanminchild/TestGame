@@ -16,6 +16,27 @@ export const THROW_SUCCESS_BASE = 0.5;
 export const THROW_SUCCESS_PER_DISTANCE = 0.08;
 export const THROW_MAX_DISTANCE = 8;
 
+export const TOOL_TYPES = {
+  HOE: "hoe",
+  SEEDS: "seeds",
+  WATERING_CAN: "watering-can"
+};
+
+export const TILE_TYPES = {
+  GRASS: "grass",
+  DIRT: "dirt"
+};
+
+export const PLANT_STAGES = {
+  EMPTY: "empty",
+  SEED: "seed",
+  SPROUT: "sprout",
+  CROP: "crop"
+};
+
+export const GROWTH_DURATION_MIN = 4000;
+export const GROWTH_DURATION_MAX = 9000;
+
 export const INV_SQRT2 = 1 / Math.sqrt(2);
 
 export const DIRECTION_VECTORS = [

@@ -6,7 +6,9 @@ import {
   throwMin,
   tryCollectMin,
   tryInteractWithButton,
-  updateMins
+  updateMins,
+  updateWorld,
+  useToolAtCursor
 } from "./src/interactions.js";
 
 const canvas = document.getElementById("game");
@@ -15,7 +17,8 @@ const ctx = canvas.getContext("2d");
 const keys = setupInput();
 const character = createCharacter();
 const spriteBank = createSpriteBank();
-const { button, mins } = createWorld();
+const world = createWorld();
+const { button, mins } = world;
 
 canvas.style.cursor = "none";
 
@@ -27,6 +30,35 @@ let camera = {
 };
 
 let lastFrameTime = performance.now();
+
+function syncToolButtons() {
+  document.querySelectorAll(".tool-slot").forEach((slot) => {
+    slot.classList.toggle("active", slot.dataset.tool === world.selectedTool);
+  });
+}
+
+document.querySelectorAll(".tool-slot").forEach((slot) => {
+  slot.addEventListener("click", () => {
+    world.selectedTool = slot.dataset.tool;
+    syncToolButtons();
+  });
+});
+
+document.addEventListener("keydown", (event) => {
+  const map = {
+    Digit1: "hoe",
+    Digit2: "seeds",
+    Digit3: "watering-can"
+  };
+
+  const tool = map[event.code];
+  if (tool) {
+    world.selectedTool = tool;
+    syncToolButtons();
+  }
+});
+
+syncToolButtons();
 
 function updateCursorPosition(event) {
   const rect = canvas.getBoundingClientRect();
@@ -48,7 +80,10 @@ function updateCursorPosition(event) {
 canvas.addEventListener("mousemove", updateCursorPosition);
 
 canvas.addEventListener("click", () => {
-  throwMin(character, mins, button, cursor);
+  const usedTool = useToolAtCursor(world, cursor);
+  if (!usedTool) {
+    throwMin(character, mins, button, cursor);
+  }
 });
 
 function loop(timestamp) {
@@ -56,6 +91,7 @@ function loop(timestamp) {
   lastFrameTime = timestamp;
 
   updateCharacterFromControls(character, keys, deltaMs);
+  updateWorld(world, deltaMs);
   updateMins(character, mins, button);
 
   if (keys.has("KeyE")) {
@@ -73,10 +109,10 @@ function loop(timestamp) {
   }
 
   camera = updateCamera(canvas, character);
-  drawScene(ctx, canvas, character, spriteBank, camera, button, mins, cursor);
+  drawScene(ctx, canvas, character, spriteBank, camera, button, mins, cursor, world);
 
   requestAnimationFrame(loop);
 }
 
-drawScene(ctx, canvas, character, spriteBank, camera, button, mins, cursor);
+drawScene(ctx, canvas, character, spriteBank, camera, button, mins, cursor, world);
 requestAnimationFrame(loop);

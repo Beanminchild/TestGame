@@ -10,9 +10,16 @@
     <div class="shell">
       <div class="hud">
         <h1>Isometric Field Prototype</h1>
-        <p>Move: Arrow keys • Character walks in the current direction</p>
+        <p>Move: Arrow keys • Click to use the selected tool</p>
       </div>
+
       <canvas id="game" width="960" height="640"></canvas>
+
+      <div class="inventory">
+        <button class="tool-slot active" data-tool="hoe">🪓 Hoe</button>
+        <button class="tool-slot" data-tool="seeds">🌱 Seeds</button>
+        <button class="tool-slot" data-tool="watering-can">💧 Water</button>
+      </div>
     </div>
 
     <script type="module" src="./game.js"></script>
