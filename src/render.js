@@ -202,10 +202,17 @@ export function drawMin(ctx, min, camera) {
   ctx.save();
   ctx.translate(p.x, p.y - 6);
 
-  ctx.fillStyle = min.state === "following" ? "#f7c873" : "#8c5b2b";
+  ctx.fillStyle = (min.state === "following" || min.state === "carrying") ? "#f7c873" : "#8c5b2b";
   ctx.beginPath();
   ctx.arc(0, 0, 8, 0, Math.PI * 2);
   ctx.fill();
+
+  if (min.state === "carrying") {
+    ctx.fillStyle = "#d9b44a";
+    ctx.beginPath();
+    ctx.arc(0, -12, 5, 0, Math.PI * 2);
+    ctx.fill();
+  }
 
   ctx.fillStyle = "#3a210f";
   ctx.fillRect(-3, -1, 6, 2);

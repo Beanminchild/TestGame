@@ -13,7 +13,12 @@ export function setupInput(keys = new Set()) {
       "KeyW",
       "KeyA",
       "KeyS",
-      "KeyD"
+      "KeyD",
+      "Digit1",
+      "Digit2",
+      "Digit3",
+      "Digit4"
+
     ]);
 
     if (handledKeys.has(key)) {

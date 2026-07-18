@@ -54,6 +54,7 @@ canvas {
 
 .inventory {
   display: flex;
+  align-items: center;
   gap: 10px;
   padding: 12px;
   background: rgba(20, 24, 18, 0.86);
@@ -75,4 +76,14 @@ canvas {
 .tool-slot.active {
   outline: 2px solid #8edc6c;
   background: linear-gradient(180deg, #51663c, #37502a);
+}
+
+.crop-counter {
+  margin-left: auto;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  font-weight: 700;
+  color: #d9b44a;
+  border: 1px solid rgba(217, 180, 74, 0.2);
 }

@@ -10,6 +10,7 @@ export const BUTTON_REQUIRED_MIN = 3;
 export const MIN_SPAWN_COUNT = 5;
 export const MIN_INTERACTION_RADIUS = 1.2;
 export const BUTTON_INTERACTION_RADIUS = 1.2;
+export const HARVEST_RADIUS = 1.0;
 
 export const THROW_TARGET_RADIUS = 2.4;
 export const THROW_SUCCESS_BASE = 0.5;

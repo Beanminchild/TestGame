@@ -34,6 +34,7 @@ export function createWorld() {
     state: "loose",
     followIndex: 0,
     target: null,
+    targetTile: null,
     throwOrigin: null,
     throwDistance: 0,
     landed: false
@@ -54,7 +55,8 @@ export function createWorld() {
     button: createButton(),
     mins,
     tiles,
-    selectedTool: TOOL_TYPES.HOE
+    selectedTool: TOOL_TYPES.HOE,
+    cropsCollected: 0
   };
 }
 
@@ -73,13 +75,14 @@ function moveToward(min, targetCol, targetRow, speed = 0.12) {
 function settleMin(min) {
   min.state = "loose";
   min.target = null;
+  min.targetTile = null;
   min.throwOrigin = null;
   min.throwDistance = 0;
   min.landed = true;
 }
 
-export function updateMins(character, mins, button) {
-  const followers = mins.filter((min) => min.state === "following");
+export function updateMins(character, mins, button, world) {
+  const followers = mins.filter((min) => min.state === "following" || min.state === "carrying");
 
   followers.forEach((min, index) => {
     const vector = DIRECTION_VECTORS[character.dir] || { dx: 0, dy: 0 };
@@ -89,43 +92,99 @@ export function updateMins(character, mins, button) {
     const targetRow = character.row - vector.dy * offsetAmount;
 
     moveToward(min, targetCol, targetRow, 0.12);
+
+    if (min.state === "carrying") {
+      const distToChar = Math.hypot(min.col - character.col, min.row - character.row);
+      if (distToChar < 0.6) {
+        world.cropsCollected += 1;
+        min.state = "following";
+      }
+    }
   });
 
   mins.forEach((min) => {
-    if (min.state !== "thrown") return;
+    if (min.state === "thrown") {
+      const target = min.target || { col: button.col, row: button.row };
+      moveToward(min, target.col, target.row, 0.14);
 
-    const target = min.target || { col: button.col, row: button.row };
-    moveToward(min, target.col, target.row, 0.14);
+      if (min.throwOrigin) {
+        min.throwDistance = Math.hypot(
+          min.col - min.throwOrigin.col,
+          min.row - min.throwOrigin.row
+        );
+      }
 
-    if (min.throwOrigin) {
-      min.throwDistance = Math.hypot(
-        min.col - min.throwOrigin.col,
-        min.row - min.throwOrigin.row
-      );
-    }
+      const distanceToTarget = Math.hypot(min.col - target.col, min.row - target.row);
+      const distanceToButton = Math.hypot(min.col - button.col, min.row - button.row);
+      const reachedTarget = distanceToTarget <= 0.18;
+      const reachedMaxDistance = (min.throwDistance ?? 0) >= THROW_MAX_DISTANCE;
 
-    const distanceToTarget = Math.hypot(min.col - target.col, min.row - target.row);
-    const distanceToButton = Math.hypot(min.col - button.col, min.row - button.row);
-    const reachedTarget = distanceToTarget <= 0.18;
-    const reachedMaxDistance = (min.throwDistance ?? 0) >= THROW_MAX_DISTANCE;
+      if (distanceToButton <= THROW_TARGET_RADIUS && (min.throwDistance ?? 0) <= THROW_MAX_DISTANCE) {
+        const successChance = Math.min(
+          0.95,
+          THROW_SUCCESS_BASE + THROW_SUCCESS_PER_DISTANCE * (1 - distanceToButton / THROW_TARGET_RADIUS)
+        );
+        if (Math.random() < successChance) {
+          button.minCount += 1;
+          button.pressed = button.minCount >= BUTTON_REQUIRED_MIN;
+          settleMin(min);
+          return;
+        }
+      }
 
-    if (distanceToButton <= THROW_TARGET_RADIUS && (min.throwDistance ?? 0) <= THROW_MAX_DISTANCE) {
-      const successChance = Math.min(
-        0.95,
-        THROW_SUCCESS_BASE + THROW_SUCCESS_PER_DISTANCE * (1 - distanceToButton / THROW_TARGET_RADIUS)
-      );
-      const succeeded = Math.random() < successChance;
+      if (reachedTarget || reachedMaxDistance) {
+        const tCol = Math.floor(target.col);
+        const tRow = Math.floor(target.row);
+        const tile = world.tiles[tRow]?.[tCol];
 
-      if (succeeded) {
-        button.minCount += 1;
-        button.pressed = button.minCount >= BUTTON_REQUIRED_MIN;
+        if (tile && tile.planted) {
+          min.state = "harvesting";
+          min.targetTile = { col: tCol, row: tRow };
+          min.col = tCol + 0.5;
+          min.row = tRow + 0.5;
+        } else {
+          settleMin(min);
+        }
       }
     }
 
-    if (reachedTarget || distanceToButton <= THROW_TARGET_RADIUS || reachedMaxDistance) {
-      settleMin(min);
+    if (min.state === "harvesting") {
+      const tile = world.tiles[min.targetTile.row][min.targetTile.col];
+      if (tile.stage === PLANT_STAGES.CROP) {
+        tile.planted = false;
+        tile.watered = false;
+        tile.growth = 0;
+        tile.stage = PLANT_STAGES.EMPTY;
+        tile.type = TILE_TYPES.DIRT;
+        min.state = "carrying";
+        min.targetTile = null;
+      }
     }
   });
+}
+
+export function tryHarvestCrop(character, world) {
+  const c = Math.floor(character.col);
+  const r = Math.floor(character.row);
+
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      const tr = r + dy;
+      const tc = c + dx;
+      const tile = world.tiles[tr]?.[tc];
+
+      if (tile && tile.stage === PLANT_STAGES.CROP) {
+        tile.planted = false;
+        tile.watered = false;
+        tile.growth = 0;
+        tile.stage = PLANT_STAGES.EMPTY;
+        tile.type = TILE_TYPES.DIRT;
+        world.cropsCollected += 1;
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 export function tryCollectMin(character, mins) {

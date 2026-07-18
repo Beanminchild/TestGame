@@ -10,7 +10,7 @@
     <div class="shell">
       <div class="hud">
         <h1>Isometric Field Prototype</h1>
-        <p>Move: Arrow keys • Click to use the selected tool</p>
+        <p>Move: Arrow keys • Click to use tools/throw • E to interact/harvest</p>
       </div>
 
       <canvas id="game" width="960" height="640"></canvas>
@@ -19,6 +19,9 @@
         <button class="tool-slot active" data-tool="hoe">🪓 Hoe</button>
         <button class="tool-slot" data-tool="seeds">🌱 Seeds</button>
         <button class="tool-slot" data-tool="watering-can">💧 Water</button>
+        <div class="crop-counter">
+          🧺 Collected: <span id="crop-count">0</span>
+        </div>
       </div>
     </div>
 

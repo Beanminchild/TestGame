@@ -8,7 +8,8 @@ import {
   tryInteractWithButton,
   updateMins,
   updateWorld,
-  useToolAtCursor
+  useToolAtCursor,
+  tryHarvestCrop
 } from "./src/interactions.js";
 
 const canvas = document.getElementById("game");
@@ -31,16 +32,21 @@ let camera = {
 
 let lastFrameTime = performance.now();
 
-function syncToolButtons() {
+function syncHUD() {
   document.querySelectorAll(".tool-slot").forEach((slot) => {
     slot.classList.toggle("active", slot.dataset.tool === world.selectedTool);
   });
+  
+  const countDisplay = document.getElementById("crop-count");
+  if (countDisplay) {
+    countDisplay.textContent = world.cropsCollected;
+  }
 }
 
 document.querySelectorAll(".tool-slot").forEach((slot) => {
   slot.addEventListener("click", () => {
     world.selectedTool = slot.dataset.tool;
-    syncToolButtons();
+    syncHUD();
   });
 });
 
@@ -54,11 +60,11 @@ document.addEventListener("keydown", (event) => {
   const tool = map[event.code];
   if (tool) {
     world.selectedTool = tool;
-    syncToolButtons();
+    syncHUD();
   }
 });
 
-syncToolButtons();
+syncHUD();
 
 function updateCursorPosition(event) {
   const rect = canvas.getBoundingClientRect();
@@ -92,12 +98,15 @@ function loop(timestamp) {
 
   updateCharacterFromControls(character, keys, deltaMs);
   updateWorld(world, deltaMs);
-  updateMins(character, mins, button);
+  updateMins(character, mins, button, world);
 
   if (keys.has("KeyE")) {
-    const collected = tryCollectMin(character, mins);
-    if (!collected) {
-      tryInteractWithButton(character, button);
+    const harvested = tryHarvestCrop(character, world);
+    if (!harvested) {
+      const collected = tryCollectMin(character, mins);
+      if (!collected) {
+        tryInteractWithButton(character, button);
+      }
     }
     keys.delete("KeyE");
   }
@@ -108,6 +117,7 @@ function loop(timestamp) {
     keys.delete("KeyF");
   }
 
+  syncHUD();
   camera = updateCamera(canvas, character);
   drawScene(ctx, canvas, character, spriteBank, camera, button, mins, cursor, world);
 
