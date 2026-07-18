@@ -1,6 +1,7 @@
 export function setupInput(keys = new Set()) {
   window.addEventListener("keydown", (event) => {
     const key = event.code || event.key;
+     
     const handledKeys = new Set([
       "ArrowLeft",
       "ArrowRight",
@@ -8,7 +9,11 @@ export function setupInput(keys = new Set()) {
       "ArrowDown",
       "Space",
       "KeyE",
-      "KeyF"
+      "KeyF",
+      "KeyW",
+      "KeyA",
+      "KeyS",
+      "KeyD"
     ]);
 
     if (handledKeys.has(key)) {
@@ -19,6 +24,7 @@ export function setupInput(keys = new Set()) {
 
   window.addEventListener("keyup", (event) => {
     keys.delete(event.code || event.key);
+    //handledKeys.delete(event.key.toLowerCase());
   });
 
   return keys;
