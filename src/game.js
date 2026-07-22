@@ -1,6 +1,6 @@
-import { setupInput } from "./src/input.js";
-import { createCharacter, updateCharacterFromControls, updateCamera } from "./src/character.js";
-import { createSpriteBank, drawScene } from "./src/render.js";
+import { setupInput } from "./input.js";
+import { createCharacter, updateCharacterFromControls, updateCamera } from "./character.js";
+import { createSpriteBank, drawScene } from "./render.js";
 import {
   createWorld,
   throwMin,
@@ -10,7 +10,7 @@ import {
   updateWorld,
   useToolAtCursor,
   tryHarvestCrop
-} from "./src/interactions.js";
+} from "./interactions.js";
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
