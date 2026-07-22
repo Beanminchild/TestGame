@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Isometric Grass Field Prototype</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <div class="hud">
+        <h1>Isometric Field Prototype</h1>
+        <p>Move: Arrow keys • Click to use tools/throw • E to interact/harvest</p>
+      </div>
+
+      <canvas id="game" width="960" height="640"></canvas>
+
+      <div class="inventory">
+        <button class="tool-slot active" data-tool="hoe">🪓 Hoe</button>
+        <button class="tool-slot" data-tool="seeds">🌱 Seeds</button>
+        <button class="tool-slot" data-tool="watering-can">💧 Water</button>
+        <div class="crop-counter">
+          🧺 Collected: <span id="crop-count">0</span>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="./game.js"></script>
+  </body>
+</html>
