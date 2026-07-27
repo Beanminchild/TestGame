@@ -6,7 +6,7 @@
     "vite-plugin-singlefile": "^2.3.3"
   },
   "scripts": {
-  "build": "cp index.html l13Staging/index.html && vite build && l13 build --roadroller"
+  "build": "rm -f index.html && cp workingIndex.html index.html && vite build && cp dist/index.html index.html && l13 build --roadroller"
   
 }
 }

@@ -8,7 +8,7 @@ export default defineConfig({
   build: {
     target: 'esnext',
     rollupOptions: {
-      input: './l13Staging/index.html',
+      input: 'index.html',
     },
   },
 })
