@@ -1,14 +1,14 @@
 import { defineConfig } from 'vite'
-
+import { viteSingleFile } from 'vite-plugin-singlefile'
 export default defineConfig({
   // Your custom configuration
   plugins: [
-    /* your plugins */
+    viteSingleFile()
   ],
   build: {
-    target: 'es2020',
+    target: 'esnext',
     rollupOptions: {
-      input: 'src/main.ts',
+      input: './l13Staging/index.html',
     },
   },
 })

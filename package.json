@@ -2,6 +2,11 @@
   "dependencies": {
     "l13": "^0.0.22",
     "rollup": "^4.62.2",
-    "vite": "^8.1.5"
-  }
+    "vite": "^8.1.5",
+    "vite-plugin-singlefile": "^2.3.3"
+  },
+  "scripts": {
+  "build": "cp index.html l13Staging/index.html && vite build && l13 build --roadroller"
+  
+}
 }
