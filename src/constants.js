@@ -76,7 +76,7 @@ export const DIRECTION_STYLES = [
 ];
 
 export const PLACEHOLDER_LOOK = {
-  hair: "#4a2f20",
+  hair: "#d95730",
   skin: "#f2c59c",
   coat: "#5b78d9",
   pants: "#263140",

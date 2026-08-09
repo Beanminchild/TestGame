@@ -135,6 +135,8 @@ export function drawBox(ctx, box, camera) {
   ctx.restore();
 }
 
+// ... (isoToScreen, drawGrassTile, drawDirtTile, drawPlantOverlay, drawBox remain the same) ...
+
 function buildSpriteFrame(directionIndex, frameIndex) {
   const sprite = document.createElement("canvas");
   sprite.width = 64;
@@ -144,73 +146,128 @@ function buildSpriteFrame(directionIndex, frameIndex) {
   const walkPose = WALK_POSES[frameIndex];
   const style = DIRECTION_STYLES[directionIndex];
 
-  // Shadow
-  g.fillStyle = "rgba(0,0,0,0.28)";
+  // 1. Soft Shadow
+  g.fillStyle = "rgba(0,0,0,0.15)";
   g.beginPath();
-  g.ellipse(32, 50, 18, 8, 0, 0, Math.PI * 2);
+  g.ellipse(32, 52, 12, 6, 0, 0, Math.PI * 2);
   g.fill();
 
-  const shirtX = 24 + style.bodyOffsetX;
-  const shirtY = 18 + style.bodyOffsetY;
+  const bx = 32 + style.bodyOffsetX;
+  const by = 35 + style.bodyOffsetY;
+  const hx = 32 + style.headOffsetX;
+  const hy = 20 + style.headOffsetY;
 
-  // Hair
+  // --- 2. Pigtails (Back Layer) ---
+  // Pigtails are drawn behind the head when facing away (directions 5, 6, 7)
   g.fillStyle = PLACEHOLDER_LOOK.hair;
-  g.fillRect(24 + style.headOffsetX, 4 + style.headOffsetY, 16, 5);
+  const ptBounce = walkPose.legSwing * 0.5; // Pigtails bounce when walking
+  
+  function drawPigtail(x, y, isFront) {
+    g.beginPath();
+    g.ellipse(x, y + ptBounce, 5, 7, isFront ? 0.2 : -0.2, 0, Math.PI * 2);
+    g.fill();
+    // Tiny hair tie (+)
+    g.fillStyle = "#f4d683";
+    g.fillRect(x - 3, y - 1 + ptBounce, 6, 2); // Horizontal bar
+    g.fillRect(x - 1, y - 3 + ptBounce, 2, 6); // Vertical bar
+    g.fillStyle = PLACEHOLDER_LOOK.hair;
+  }
 
-  // Face
-  g.fillStyle = PLACEHOLDER_LOOK.skin;
+  // Draw back pigtails if facing forward
+  if (directionIndex >= 1 && directionIndex <= 3) {
+    // Hidden behind head mostly
+  } else if (directionIndex === 6 || directionIndex === 5 || directionIndex === 7) {
+    drawPigtail(hx - 9, hy + 2, false);
+    drawPigtail(hx + 9, hy + 2, true);
+  }
+
+  // --- 3. Legs ---
+  g.strokeStyle = PLACEHOLDER_LOOK.pants;
+  g.lineWidth = 5;
+  g.lineCap = "round";
   g.beginPath();
-  g.arc(32 + style.headOffsetX, 13 + style.headOffsetY, 8, 0, Math.PI * 2);
+  g.moveTo(bx - 3, by + 5);
+  g.lineTo(bx - 5 + walkPose.legSwing, by + 16);
+  g.moveTo(bx + 3, by + 5);
+  g.lineTo(bx + 5 - walkPose.legSwing, by + 16);
+  g.stroke();
+
+  // --- 4. Torso (3D "Bean" Shape) ---
+  const bodyGrad = g.createRadialGradient(bx - 3, by - 3, 2, bx, by, 12);
+  bodyGrad.addColorStop(0, "#7a95eb"); // Highlight
+  bodyGrad.addColorStop(1, PLACEHOLDER_LOOK.coat);
+  g.fillStyle = bodyGrad;
+  g.beginPath();
+  g.ellipse(bx, by, 9, 11, 0, 0, Math.PI * 2);
   g.fill();
 
-  // Coat
-  g.fillStyle = PLACEHOLDER_LOOK.coat;
-  g.fillRect(shirtX, shirtY, 16, 18);
-
-  // Trim
-  g.fillStyle = PLACEHOLDER_LOOK.trim;
-  g.fillRect(shirtX + 3, shirtY + 15, 10, 2);
-
-  // Scarf
-  g.strokeStyle = PLACEHOLDER_LOOK.scarf;
-  g.lineWidth = 3;
+  // --- 5. Head & Face ---
+  // Skin with slight shadow
+  const headGrad = g.createRadialGradient(hx - 2, hy - 2, 2, hx, hy, 10);
+  headGrad.addColorStop(0, "#ffe0c2");
+  headGrad.addColorStop(1, PLACEHOLDER_LOOK.skin);
+  g.fillStyle = headGrad;
   g.beginPath();
-  g.moveTo(24 + style.bodyOffsetX, 25 + style.bodyOffsetY);
-  g.lineTo(40 + style.bodyOffsetX, 25 + style.bodyOffsetY);
-  g.stroke();
+  g.arc(hx, hy, 8.5, 0, Math.PI * 2);
+  g.fill();
 
-  // Arms
-  g.strokeStyle = PLACEHOLDER_LOOK.trim;
-  g.lineWidth = 4;
+  // Red Hair (Main mass)
+  g.fillStyle = PLACEHOLDER_LOOK.hair;
   g.beginPath();
-  g.moveTo(24 + style.bodyOffsetX, 24 + style.bodyOffsetY);
-  g.lineTo(18 + style.bodyOffsetX + walkPose.armSwing, 30 + style.bodyOffsetY + walkPose.armSwing * 0.25);
-  g.moveTo(40 + style.bodyOffsetX, 24 + style.bodyOffsetY);
-  g.lineTo(46 + style.bodyOffsetX - walkPose.armSwing, 30 + style.bodyOffsetY - walkPose.armSwing * 0.25);
-  g.stroke();
+  g.arc(hx, hy - 1, 9, Math.PI, 0); // Hair cap
+  g.fill();
+  
+  // Bangs (Front hair)
+  if (directionIndex >= 1 && directionIndex <= 3) { // Facing down/forward
+    g.beginPath();
+    g.moveTo(hx - 9, hy - 1);
+    g.quadraticCurveTo(hx - 5, hy + 4, hx, hy - 1);
+    g.quadraticCurveTo(hx + 5, hy + 4, hx + 9, hy - 1);
+    g.fill();
+  }
 
-  // Pants
-  g.strokeStyle = PLACEHOLDER_LOOK.pants;
-  g.lineWidth = 4;
-  g.beginPath();
-  g.moveTo(28 + style.bodyOffsetX, 36 + style.bodyOffsetY);
-  g.lineTo(28 + style.bodyOffsetX + walkPose.legSwing, 44 + style.bodyOffsetY + walkPose.legSwing * 0.35);
-  g.moveTo(36 + style.bodyOffsetX, 36 + style.bodyOffsetY);
-  g.lineTo(36 + style.bodyOffsetX - walkPose.legSwing, 44 + style.bodyOffsetY - walkPose.legSwing * 0.35);
-  g.stroke();
+  // --- 6. Pigtails (Front Layer) ---
+  // Pigtails are drawn in front of the head when facing forward (directions 1, 2, 3)
+  if (directionIndex >= 1 && directionIndex <= 3) {
+    drawPigtail(hx - 10, hy + 2, false);
+    drawPigtail(hx + 10, hy + 2, true);
+  } else if (directionIndex === 0) { // Right
+    drawPigtail(hx - 2, hy + 2, false); // One hidden behind, one visible
+  } else if (directionIndex === 4) { // Left
+    drawPigtail(hx + 2, hy + 2, true);
+  }
 
-  // Boots
-  g.strokeStyle = PLACEHOLDER_LOOK.boots;
-  g.lineWidth = 3;
+  // --- 7. Eyes ---
+  g.fillStyle = "#333";
+  const eyeY = hy + 1;
+  if (directionIndex === 2) { // Down
+    g.fillRect(hx - 4, eyeY, 2, 2); g.fillRect(hx + 2, eyeY, 2, 2);
+  } else if (directionIndex === 1) { // Down-Right
+    g.fillRect(hx - 1, eyeY, 2, 2); g.fillRect(hx + 4, eyeY, 2, 2);
+  } else if (directionIndex === 3) { // Down-Left
+    g.fillRect(hx - 6, eyeY, 2, 2); g.fillRect(hx - 1, eyeY, 2, 2);
+  } else if (directionIndex === 0) { // Right
+    g.fillRect(hx + 4, eyeY, 2, 2);
+  } else if (directionIndex === 4) { // Left
+    g.fillRect(hx - 6, eyeY, 2, 2);
+  }
+
+  // --- 8. Arms ---
+  g.strokeStyle = "#4a65bd"; // Darker blue for arms
+  g.lineWidth = 4.5;
   g.beginPath();
-  g.moveTo(25 + style.bodyOffsetX + walkPose.legSwing * 0.4, 44 + style.bodyOffsetY + walkPose.legSwing * 0.35);
-  g.lineTo(31 + style.bodyOffsetX + walkPose.legSwing * 0.4, 48 + style.bodyOffsetY + walkPose.legSwing * 0.35);
-  g.moveTo(33 + style.bodyOffsetX - walkPose.legSwing * 0.4, 44 + style.bodyOffsetY - walkPose.legSwing * 0.35);
-  g.lineTo(39 + style.bodyOffsetX - walkPose.legSwing * 0.4, 48 + style.bodyOffsetY - walkPose.legSwing * 0.35);
+  // Simple arm swing logic
+  const armAngle = walkPose.armSwing * 0.1;
+  g.moveTo(bx, by - 5);
+  g.lineTo(bx - 8 + walkPose.armSwing, by + 4);
+  g.moveTo(bx, by - 5);
+  g.lineTo(bx + 8 - walkPose.armSwing, by + 4);
   g.stroke();
 
   return sprite;
 }
+
+// ... (Rest of drawCharacter, drawMin, etc remain the same) ...
 
 export function createSpriteBank() {
   const bank = [];
@@ -232,7 +289,7 @@ export function drawCharacter(ctx, character, spriteBank, camera) {
 
   if (character.holdingCrop) {
     ctx.save();
-    ctx.translate(p.x, p.y - 70); 
+    ctx.translate(p.x, p.y - 50); 
     ctx.fillStyle = "#4a8f3b";
     ctx.beginPath();
     ctx.arc(0, -8, 6, 0, Math.PI * 2);
