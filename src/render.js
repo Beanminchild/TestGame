@@ -35,6 +35,7 @@ function drawGrassTile(ctx, col, row, camera) {
   ctx.lineWidth = 1.25;
   ctx.stroke();
 
+  // Add small grass detail
   ctx.fillStyle = "rgba(255,255,255,0.06)";
   ctx.fillRect(p.x - 8, p.y - 4, 16, 2);
   ctx.fillStyle = "rgba(0,0,0,0.08)";
@@ -57,6 +58,7 @@ function drawDirtTile(ctx, col, row, camera) {
   ctx.lineWidth = 1.2;
   ctx.stroke();
 
+  // Add dirt texture detail
   ctx.fillStyle = "rgba(255,255,255,0.05)";
   ctx.fillRect(p.x - 8, p.y - 3, 16, 2);
 }
@@ -109,6 +111,30 @@ function drawPlantOverlay(ctx, tile, col, row, camera) {
   ctx.restore();
 }
 
+export function drawBox(ctx, box, camera) {
+  const p = isoToScreen(box.col, box.row, camera);
+
+  ctx.save();
+  ctx.translate(p.x, p.y);
+
+  // Box depth/shadow
+  ctx.fillStyle = "#4e342e";
+  ctx.beginPath();
+  ctx.moveTo(-20, 0); ctx.lineTo(0, 10); ctx.lineTo(0, 25); ctx.lineTo(-20, 15); ctx.fill();
+
+  ctx.fillStyle = "#3e2723";
+  ctx.beginPath();
+  ctx.moveTo(20, 0); ctx.lineTo(0, 10); ctx.lineTo(0, 25); ctx.lineTo(20, 15); ctx.fill();
+
+  // Box top/interior
+  ctx.fillStyle = "#5d4037";
+  ctx.beginPath();
+  ctx.moveTo(0, -10); ctx.lineTo(20, 0); ctx.lineTo(0, 10); ctx.lineTo(-20, 0);
+  ctx.closePath(); ctx.fill();
+  
+  ctx.restore();
+}
+
 function buildSpriteFrame(directionIndex, frameIndex) {
   const sprite = document.createElement("canvas");
   sprite.width = 64;
@@ -118,6 +144,7 @@ function buildSpriteFrame(directionIndex, frameIndex) {
   const walkPose = WALK_POSES[frameIndex];
   const style = DIRECTION_STYLES[directionIndex];
 
+  // Shadow
   g.fillStyle = "rgba(0,0,0,0.28)";
   g.beginPath();
   g.ellipse(32, 50, 18, 8, 0, 0, Math.PI * 2);
@@ -126,20 +153,25 @@ function buildSpriteFrame(directionIndex, frameIndex) {
   const shirtX = 24 + style.bodyOffsetX;
   const shirtY = 18 + style.bodyOffsetY;
 
+  // Hair
   g.fillStyle = PLACEHOLDER_LOOK.hair;
   g.fillRect(24 + style.headOffsetX, 4 + style.headOffsetY, 16, 5);
 
+  // Face
   g.fillStyle = PLACEHOLDER_LOOK.skin;
   g.beginPath();
   g.arc(32 + style.headOffsetX, 13 + style.headOffsetY, 8, 0, Math.PI * 2);
   g.fill();
 
+  // Coat
   g.fillStyle = PLACEHOLDER_LOOK.coat;
   g.fillRect(shirtX, shirtY, 16, 18);
 
+  // Trim
   g.fillStyle = PLACEHOLDER_LOOK.trim;
   g.fillRect(shirtX + 3, shirtY + 15, 10, 2);
 
+  // Scarf
   g.strokeStyle = PLACEHOLDER_LOOK.scarf;
   g.lineWidth = 3;
   g.beginPath();
@@ -147,6 +179,7 @@ function buildSpriteFrame(directionIndex, frameIndex) {
   g.lineTo(40 + style.bodyOffsetX, 25 + style.bodyOffsetY);
   g.stroke();
 
+  // Arms
   g.strokeStyle = PLACEHOLDER_LOOK.trim;
   g.lineWidth = 4;
   g.beginPath();
@@ -156,6 +189,7 @@ function buildSpriteFrame(directionIndex, frameIndex) {
   g.lineTo(46 + style.bodyOffsetX - walkPose.armSwing, 30 + style.bodyOffsetY - walkPose.armSwing * 0.25);
   g.stroke();
 
+  // Pants
   g.strokeStyle = PLACEHOLDER_LOOK.pants;
   g.lineWidth = 4;
   g.beginPath();
@@ -165,6 +199,7 @@ function buildSpriteFrame(directionIndex, frameIndex) {
   g.lineTo(36 + style.bodyOffsetX - walkPose.legSwing, 44 + style.bodyOffsetY - walkPose.legSwing * 0.35);
   g.stroke();
 
+  // Boots
   g.strokeStyle = PLACEHOLDER_LOOK.boots;
   g.lineWidth = 3;
   g.beginPath();
@@ -194,6 +229,19 @@ export function drawCharacter(ctx, character, spriteBank, camera) {
   const frameIndex = character.walkFrame % 2;
   const sprite = spriteBank[character.dir][frameIndex];
   ctx.drawImage(sprite, p.x - 32, p.y - 58, 64, 64);
+
+  if (character.holdingCrop) {
+    ctx.save();
+    ctx.translate(p.x, p.y - 70); 
+    ctx.fillStyle = "#4a8f3b";
+    ctx.beginPath();
+    ctx.arc(0, -8, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#d9b44a";
+    ctx.fillRect(-2, -2, 4, 6);
+    ctx.restore();
+  }
 }
 
 export function drawMin(ctx, min, camera) {
@@ -202,20 +250,23 @@ export function drawMin(ctx, min, camera) {
   ctx.save();
   ctx.translate(p.x, p.y - 6);
 
+  // Mins have a lighter/glowing color when following or carrying
   ctx.fillStyle = (min.state === "following" || min.state === "carrying") ? "#f7c873" : "#8c5b2b";
   ctx.beginPath();
   ctx.arc(0, 0, 8, 0, Math.PI * 2);
   ctx.fill();
 
-  if (min.state === "carrying") {
+  if (min.state === "carrying" || min.isDelivering) {
     ctx.fillStyle = "#d9b44a";
     ctx.beginPath();
     ctx.arc(0, -12, 5, 0, Math.PI * 2);
     ctx.fill();
   }
 
+  // Face/Eyes detail
   ctx.fillStyle = "#3a210f";
   ctx.fillRect(-3, -1, 6, 2);
+
   ctx.restore();
 }
 
@@ -288,6 +339,7 @@ export function drawScene(ctx, canvas, character, spriteBank, camera, button, mi
     drawPlantOverlay(ctx, tile, c, r, camera);
   }
 
+  drawBox(ctx, world.box, camera);
   drawButton(ctx, button, camera);
 
   for (const min of mins) {

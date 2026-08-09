@@ -17,6 +17,10 @@ export const THROW_SUCCESS_BASE = 0.5;
 export const THROW_SUCCESS_PER_DISTANCE = 0.08;
 export const THROW_MAX_DISTANCE = 8;
 
+export const BOX_COL = 10;
+export const BOX_ROW = 8;
+export const BOX_INTERACTION_RADIUS = 1.5;
+
 export const TOOL_TYPES = {
   HOE: "hoe",
   SEEDS: "seeds",
@@ -36,8 +40,8 @@ export const PLANT_STAGES = {
   CROP: "crop"
 };
 
-export const GROWTH_DURATION_MIN = 4000;
-export const GROWTH_DURATION_MAX = 9000;
+export const GROWTH_DURATION_MIN = 60000;
+export const GROWTH_DURATION_MAX = 90000;
 
 export const INV_SQRT2 = 1 / Math.sqrt(2);
 

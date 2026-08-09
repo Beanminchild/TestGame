@@ -9,7 +9,9 @@ import {
   updateMins,
   updateWorld,
   useToolAtCursor,
-  tryHarvestCrop
+  tryHarvestCrop,
+  tryTakeCropFromMin,
+  tryDepositCrop
 } from "./interactions.js";
 import { TOOL_TYPES } from "./constants.js";
 
@@ -80,7 +82,7 @@ function syncHUD() {
  */
 function handleToolAction() {
   if (world.selectedTool === "min") {
-    throwMin(character, mins, button, cursor);
+    throwMin(character, mins, button, world.box, cursor);
   } else {
     // If hoe/seeds/watering-can is selected, it will NOT throw a min if it fails
     useToolAtCursor(world, cursor);
@@ -144,16 +146,26 @@ function loop(timestamp) {
   updateWorld(world, deltaMs);
   updateMins(character, mins, button, world);
 
-  // E Key: Prioritize interaction, then tool use
+    // E Key: Prioritize interaction, then tool use
   if (keys.has("KeyE")) {
-    const harvested = tryHarvestCrop(character, world);
-    if (!harvested) {
-      const collected = tryCollectMin(character, mins);
-      if (!collected) {
-        const interacted = tryInteractWithButton(character, button);
-        if (!interacted) {
-          // Only uses tool if nothing else happened
-          handleToolAction();
+    // 1. Try depositing first if holding something
+    const deposited = tryDepositCrop(character, world.box, world);
+    if (!deposited) {
+      // 2. Try harvesting from ground
+      const harvested = tryHarvestCrop(character, world);
+      if (!harvested) {
+        // 3. Try taking from a Min
+        const tookFromMin = tryTakeCropFromMin(character, mins);
+        if (!tookFromMin) {
+          // 4. Collect loose Min
+          const collected = tryCollectMin(character, mins);
+          if (!collected) {
+            // 5. Button
+            const interacted = tryInteractWithButton(character, button);
+            if (!interacted) {
+              handleToolAction();
+            }
+          }
         }
       }
     }
