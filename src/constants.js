@@ -20,7 +20,8 @@ export const THROW_MAX_DISTANCE = 8;
 export const TOOL_TYPES = {
   HOE: "hoe",
   SEEDS: "seeds",
-  WATERING_CAN: "watering-can"
+  WATERING_CAN: "watering-can",
+  MIN: "min"
 };
 
 export const TILE_TYPES = {
