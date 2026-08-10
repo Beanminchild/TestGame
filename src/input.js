@@ -17,7 +17,8 @@ export function setupInput(keys = new Set()) {
       "Digit1",
       "Digit2",
       "Digit3",
-      "Digit4"
+      "Digit4",
+      "Digit5"
 
     ]);
 

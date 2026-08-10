@@ -83,11 +83,20 @@ function syncHUD() {
 function handleToolAction() {
   if (world.selectedTool === "min") {
     throwMin(character, mins, button, world.box, cursor);
-  } else {
+  } if (world.selectedTool == "empty-hands"){
+     // 2. Try harvesting from ground
+      const harvested = tryHarvestCrop(character, world);
+      if (!harvested) {
+        // 3. Try taking from a Min
+        const tookFromMin = tryTakeCropFromMin(character, mins);
+        if (!tookFromMin) {
+          
+  } } }else {
     // If hoe/seeds/watering-can is selected, it will NOT throw a min if it fails
     useToolAtCursor(world, cursor);
+    }
   }
-}
+
 
 // Toolbar Clicks
 document.querySelectorAll(".tool-slot").forEach((slot) => {
@@ -104,7 +113,8 @@ document.addEventListener("keydown", (event) => {
     Digit1: "hoe",
     Digit2: "seeds",
     Digit3: "watering-can",
-    Digit4: "min"
+    Digit4: "min",
+    Digit5: "empty-hands"
   };
 
   const tool = map[event.code];
@@ -150,13 +160,7 @@ function loop(timestamp) {
   if (keys.has("KeyE")) {
     // 1. Try depositing first if holding something
     const deposited = tryDepositCrop(character, world.box, world);
-    if (!deposited) {
-      // 2. Try harvesting from ground
-      const harvested = tryHarvestCrop(character, world);
-      if (!harvested) {
-        // 3. Try taking from a Min
-        const tookFromMin = tryTakeCropFromMin(character, mins);
-        if (!tookFromMin) {
+    if (!deposited) {     
           // 4. Collect loose Min
           const collected = tryCollectMin(character, mins);
           if (!collected) {
@@ -165,9 +169,8 @@ function loop(timestamp) {
             if (!interacted) {
               handleToolAction();
             }
-          }
-        }
-      }
+          }       
+      
     }
     keys.delete("KeyE");
   }

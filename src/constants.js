@@ -25,7 +25,8 @@ export const TOOL_TYPES = {
   HOE: "hoe",
   SEEDS: "seeds",
   WATERING_CAN: "watering-can",
-  MIN: "min"
+  MIN: "min",
+  HANDS: "empty-hands"
 };
 
 export const TILE_TYPES = {
