@@ -169,8 +169,7 @@ function loop(timestamp) {
             if (!interacted) {
               handleToolAction();
             }
-          }       
-      
+          }     
     }
     keys.delete("KeyE");
   }
