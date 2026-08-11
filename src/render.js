@@ -35,7 +35,6 @@ function drawGrassTile(ctx, col, row, camera) {
   ctx.lineWidth = 1.25;
   ctx.stroke();
 
-  // Add small grass detail
   ctx.fillStyle = "rgba(255,255,255,0.06)";
   ctx.fillRect(p.x - 8, p.y - 4, 16, 2);
   ctx.fillStyle = "rgba(0,0,0,0.08)";
@@ -58,7 +57,6 @@ function drawDirtTile(ctx, col, row, camera) {
   ctx.lineWidth = 1.2;
   ctx.stroke();
 
-  // Add dirt texture detail
   ctx.fillStyle = "rgba(255,255,255,0.05)";
   ctx.fillRect(p.x - 8, p.y - 3, 16, 2);
 }
@@ -117,7 +115,6 @@ export function drawBox(ctx, box, camera) {
   ctx.save();
   ctx.translate(p.x, p.y);
 
-  // Box depth/shadow
   ctx.fillStyle = "#4e342e";
   ctx.beginPath();
   ctx.moveTo(-20, 0); ctx.lineTo(0, 10); ctx.lineTo(0, 25); ctx.lineTo(-20, 15); ctx.fill();
@@ -126,7 +123,6 @@ export function drawBox(ctx, box, camera) {
   ctx.beginPath();
   ctx.moveTo(20, 0); ctx.lineTo(0, 10); ctx.lineTo(0, 25); ctx.lineTo(20, 15); ctx.fill();
 
-  // Box top/interior
   ctx.fillStyle = "#5d4037";
   ctx.beginPath();
   ctx.moveTo(0, -10); ctx.lineTo(20, 0); ctx.lineTo(0, 10); ctx.lineTo(-20, 0);
@@ -135,7 +131,35 @@ export function drawBox(ctx, box, camera) {
   ctx.restore();
 }
 
-// ... (isoToScreen, drawGrassTile, drawDirtTile, drawPlantOverlay, drawBox remain the same) ...
+export function drawDominion(ctx, dominion, camera) {
+  const p = isoToScreen(dominion.col, dominion.row, camera);
+
+  ctx.save();
+  ctx.translate(p.x, p.y);
+
+  ctx.fillStyle = "#455a64";
+  ctx.beginPath();
+  ctx.moveTo(-25, 0); ctx.lineTo(0, 12); ctx.lineTo(25, 0); ctx.lineTo(0, -12);
+  ctx.fill();
+
+  const bob = Math.sin(Date.now() / 500) * 5;
+  ctx.translate(0, -25 + bob);
+  
+  ctx.fillStyle = "#90a4ae";
+  ctx.beginPath();
+  ctx.moveTo(0, -22); 
+  ctx.lineTo(14, 0);  
+  ctx.lineTo(0, 22);  
+  ctx.lineTo(-14, 0); 
+  ctx.fill();
+  
+  ctx.fillStyle = "#fff176";
+  ctx.beginPath();
+  ctx.arc(0, 0, 5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
 
 function buildSpriteFrame(directionIndex, frameIndex) {
   const sprite = document.createElement("canvas");
@@ -146,7 +170,6 @@ function buildSpriteFrame(directionIndex, frameIndex) {
   const walkPose = WALK_POSES[frameIndex];
   const style = DIRECTION_STYLES[directionIndex];
 
-  // 1. Soft Shadow
   g.fillStyle = "rgba(0,0,0,0.15)";
   g.beginPath();
   g.ellipse(32, 52, 12, 6, 0, 0, Math.PI * 2);
@@ -157,31 +180,24 @@ function buildSpriteFrame(directionIndex, frameIndex) {
   const hx = 32 + style.headOffsetX;
   const hy = 20 + style.headOffsetY;
 
-  // --- 2. Pigtails (Back Layer) ---
-  // Pigtails are drawn behind the head when facing away (directions 5, 6, 7)
   g.fillStyle = PLACEHOLDER_LOOK.hair;
-  const ptBounce = walkPose.legSwing * 0.5; // Pigtails bounce when walking
+  const ptBounce = walkPose.legSwing * 0.5;
   
   function drawPigtail(x, y, isFront) {
     g.beginPath();
     g.ellipse(x, y + ptBounce, 5, 7, isFront ? 0.2 : -0.2, 0, Math.PI * 2);
     g.fill();
-    // Tiny hair tie (+)
     g.fillStyle = "#f4d683";
-    g.fillRect(x - 3, y - 1 + ptBounce, 6, 2); // Horizontal bar
-    g.fillRect(x - 1, y - 3 + ptBounce, 2, 6); // Vertical bar
+    g.fillRect(x - 3, y - 1 + ptBounce, 6, 2);
+    g.fillRect(x - 1, y - 3 + ptBounce, 2, 6);
     g.fillStyle = PLACEHOLDER_LOOK.hair;
   }
 
-  // Draw back pigtails if facing forward
-  if (directionIndex >= 1 && directionIndex <= 3) {
-    // Hidden behind head mostly
-  } else if (directionIndex === 6 || directionIndex === 5 || directionIndex === 7) {
+  if (directionIndex === 6 || directionIndex === 5 || directionIndex === 7) {
     drawPigtail(hx - 9, hy + 2, false);
     drawPigtail(hx + 9, hy + 2, true);
   }
 
-  // --- 3. Legs ---
   g.strokeStyle = PLACEHOLDER_LOOK.pants;
   g.lineWidth = 5;
   g.lineCap = "round";
@@ -192,17 +208,14 @@ function buildSpriteFrame(directionIndex, frameIndex) {
   g.lineTo(bx + 5 - walkPose.legSwing, by + 16);
   g.stroke();
 
-  // --- 4. Torso (3D "Bean" Shape) ---
   const bodyGrad = g.createRadialGradient(bx - 3, by - 3, 2, bx, by, 12);
-  bodyGrad.addColorStop(0, "#7a95eb"); // Highlight
+  bodyGrad.addColorStop(0, "#7a95eb");
   bodyGrad.addColorStop(1, PLACEHOLDER_LOOK.coat);
   g.fillStyle = bodyGrad;
   g.beginPath();
   g.ellipse(bx, by, 9, 11, 0, 0, Math.PI * 2);
   g.fill();
 
-  // --- 5. Head & Face ---
-  // Skin with slight shadow
   const headGrad = g.createRadialGradient(hx - 2, hy - 2, 2, hx, hy, 10);
   headGrad.addColorStop(0, "#ffe0c2");
   headGrad.addColorStop(1, PLACEHOLDER_LOOK.skin);
@@ -211,14 +224,12 @@ function buildSpriteFrame(directionIndex, frameIndex) {
   g.arc(hx, hy, 8.5, 0, Math.PI * 2);
   g.fill();
 
-  // Red Hair (Main mass)
   g.fillStyle = PLACEHOLDER_LOOK.hair;
   g.beginPath();
-  g.arc(hx, hy - 1, 9, Math.PI, 0); // Hair cap
+  g.arc(hx, hy - 1, 9, Math.PI, 0);
   g.fill();
   
-  // Bangs (Front hair)
-  if (directionIndex >= 1 && directionIndex <= 3) { // Facing down/forward
+  if (directionIndex >= 1 && directionIndex <= 3) { 
     g.beginPath();
     g.moveTo(hx - 9, hy - 1);
     g.quadraticCurveTo(hx - 5, hy + 4, hx, hy - 1);
@@ -226,37 +237,32 @@ function buildSpriteFrame(directionIndex, frameIndex) {
     g.fill();
   }
 
-  // --- 6. Pigtails (Front Layer) ---
-  // Pigtails are drawn in front of the head when facing forward (directions 1, 2, 3)
   if (directionIndex >= 1 && directionIndex <= 3) {
     drawPigtail(hx - 10, hy + 2, false);
     drawPigtail(hx + 10, hy + 2, true);
-  } else if (directionIndex === 0) { // Right
-    drawPigtail(hx - 2, hy + 2, false); // One hidden behind, one visible
-  } else if (directionIndex === 4) { // Left
+  } else if (directionIndex === 0) {
+    drawPigtail(hx - 2, hy + 2, false);
+  } else if (directionIndex === 4) {
     drawPigtail(hx + 2, hy + 2, true);
   }
 
-  // --- 7. Eyes ---
   g.fillStyle = "#333";
   const eyeY = hy + 1;
-  if (directionIndex === 2) { // Down
+  if (directionIndex === 2) {
     g.fillRect(hx - 4, eyeY, 2, 2); g.fillRect(hx + 2, eyeY, 2, 2);
-  } else if (directionIndex === 1) { // Down-Right
+  } else if (directionIndex === 1) {
     g.fillRect(hx - 1, eyeY, 2, 2); g.fillRect(hx + 4, eyeY, 2, 2);
-  } else if (directionIndex === 3) { // Down-Left
+  } else if (directionIndex === 3) {
     g.fillRect(hx - 6, eyeY, 2, 2); g.fillRect(hx - 1, eyeY, 2, 2);
-  } else if (directionIndex === 0) { // Right
+  } else if (directionIndex === 0) {
     g.fillRect(hx + 4, eyeY, 2, 2);
-  } else if (directionIndex === 4) { // Left
+  } else if (directionIndex === 4) {
     g.fillRect(hx - 6, eyeY, 2, 2);
   }
 
-  // --- 8. Arms ---
-  g.strokeStyle = "#4a65bd"; // Darker blue for arms
+  g.strokeStyle = "#4a65bd";
   g.lineWidth = 4.5;
   g.beginPath();
-  // Simple arm swing logic
   const armAngle = walkPose.armSwing * 0.1;
   g.moveTo(bx, by - 5);
   g.lineTo(bx - 8 + walkPose.armSwing, by + 4);
@@ -266,8 +272,6 @@ function buildSpriteFrame(directionIndex, frameIndex) {
 
   return sprite;
 }
-
-// ... (Rest of drawCharacter, drawMin, etc remain the same) ...
 
 export function createSpriteBank() {
   const bank = [];
@@ -307,20 +311,23 @@ export function drawMin(ctx, min, camera) {
   ctx.save();
   ctx.translate(p.x, p.y - 6);
 
-  // Mins have a lighter/glowing color when following or carrying
   ctx.fillStyle = (min.state === "following" || min.state === "carrying") ? "#f7c873" : "#8c5b2b";
+  
+  if (min.state === "going_to_box" || min.state === "returning_to_dominion") {
+    ctx.fillStyle = "#64b5f6";
+  }
+
   ctx.beginPath();
   ctx.arc(0, 0, 8, 0, Math.PI * 2);
   ctx.fill();
 
-  if (min.state === "carrying" || min.isDelivering) {
+  if (min.state === "carrying" || min.isDelivering || min.state === "returning_to_dominion") {
     ctx.fillStyle = "#d9b44a";
     ctx.beginPath();
     ctx.arc(0, -12, 5, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  // Face/Eyes detail
   ctx.fillStyle = "#3a210f";
   ctx.fillRect(-3, -1, 6, 2);
 
@@ -397,6 +404,7 @@ export function drawScene(ctx, canvas, character, spriteBank, camera, button, mi
   }
 
   drawBox(ctx, world.box, camera);
+  drawDominion(ctx, world.dominion, camera);
   drawButton(ctx, button, camera);
 
   for (const min of mins) {

@@ -17,7 +17,10 @@ import {
   GROWTH_DURATION_MAX,
   BOX_COL,
   BOX_ROW,
-  BOX_INTERACTION_RADIUS
+  BOX_INTERACTION_RADIUS,
+  DOMINION_COL,
+  DOMINION_ROW,
+  DOMINION_INTERACTION_RADIUS
 } from "./constants.js";
 
 export function createButton() {
@@ -33,6 +36,13 @@ export function createBox() {
   return {
     col: BOX_COL,
     row: BOX_ROW
+  };
+}
+
+export function createDominion() {
+  return {
+    col: DOMINION_COL,
+    row: DOMINION_ROW
   };
 }
 
@@ -65,6 +75,7 @@ export function createWorld() {
   return {
     button: createButton(),
     box: createBox(),
+    dominion: createDominion(),
     mins,
     tiles,
     selectedTool: TOOL_TYPES.HOE,
@@ -94,7 +105,27 @@ function settleMin(min) {
   min.isDelivering = false;
 }
 
+export function spawnNewMin(mins, col, row, initialState = "loose") {
+  const newMin = {
+    id: Date.now() + Math.random(),
+    col: col,
+    row: row,
+    state: initialState,
+    followIndex: 0,
+    target: null,
+    targetTile: null,
+    throwOrigin: null,
+    throwDistance: 0,
+    landed: false,
+    isDelivering: false
+  };
+  mins.push(newMin);
+  return newMin;
+}
+
 export function updateMins(character, mins, button, world) {
+  const { box, dominion } = world;
+
   // 1. Sort followers so that those carrying crops are at the front of the line
   const followers = mins.filter((min) => min.state === "following" || min.state === "carrying");
   followers.sort((a, b) => {
@@ -114,8 +145,39 @@ export function updateMins(character, mins, button, world) {
   });
 
   mins.forEach((min) => {
+    // --- Dominion Automation Logic ---
+    if (min.state === "loose") {
+      const distToDominion = Math.hypot(min.col - dominion.col, min.row - dominion.row);
+      // If loose within radius (e.g. 3.0) and box has crops
+      if (distToDominion < 3.0 && world.cropsCollected > 0) {
+        min.state = "going_to_box";
+      }
+    }
+
+    if (min.state === "going_to_box") {
+      moveToward(min, box.col, box.row, 0.14);
+      if (Math.hypot(min.col - box.col, min.row - box.row) < 0.2) {
+        if (world.cropsCollected > 0) {
+          world.cropsCollected--;
+          min.state = "returning_to_dominion";
+        } else {
+          min.state = "loose";
+        }
+      }
+    }
+
+    if (min.state === "returning_to_dominion") {
+      moveToward(min, dominion.col, dominion.row, 0.14);
+      if (Math.hypot(min.col - dominion.col, min.row - dominion.row) < 0.2) {
+        // Create new min
+        spawnNewMin(mins, dominion.col, dominion.row, "following");
+        // Original min also follows
+        min.state = "following";
+      }
+    }
+
+    // --- Standard Actions ---
     if (min.state === "thrown") {
-      // 2. If min was thrown to deliver, target is the box
       const target = min.isDelivering 
         ? { col: world.box.col, row: world.box.row }
         : (min.target || { col: button.col, row: button.row });
@@ -132,7 +194,6 @@ export function updateMins(character, mins, button, world) {
       const distanceToTarget = Math.hypot(min.col - target.col, min.row - target.row);
       const reachedTarget = distanceToTarget <= 0.18;
 
-      // Handle Delivery Success
       if (min.isDelivering && reachedTarget) {
         world.cropsCollected += 1;
         min.state = "following";
@@ -140,7 +201,6 @@ export function updateMins(character, mins, button, world) {
         return;
       }
 
-      // Handle Button Interaction
       const distanceToButton = Math.hypot(min.col - button.col, min.row - button.row);
       if (!min.isDelivering && distanceToButton <= THROW_TARGET_RADIUS && (min.throwDistance ?? 0) <= THROW_MAX_DISTANCE) {
         const successChance = Math.min(
@@ -198,6 +258,18 @@ export function tryDepositCrop(character, box, world) {
   return false;
 }
 
+export function tryDepositToDominion(character, dominion, world, mins) {
+  if (!character.holdingCrop) return false;
+
+  const distance = Math.hypot(character.col - dominion.col, character.row - dominion.row);
+  if (distance <= DOMINION_INTERACTION_RADIUS) {
+    character.holdingCrop = false;
+    spawnNewMin(mins, dominion.col, dominion.row, "loose");
+    return true;
+  }
+  return false;
+}
+
 export function tryHarvestCrop(character, world) {
   if (character.holdingCrop) return false;
 
@@ -227,7 +299,6 @@ export function tryHarvestCrop(character, world) {
 export function tryTakeCropFromMin(character, mins) {
   if (character.holdingCrop) return false;
 
-  // Since Mins are sorted in updateMins, we just look for the first carrier
   for (const min of mins) {
     if (min.state !== "carrying") continue;
 
@@ -269,7 +340,6 @@ export function tryInteractWithButton(character, button) {
 }
 
 export function throwMin(character, mins, button, box, cursor = null) {
-  // Logic: Prefer throwing a min that is carrying a crop to deliver it
   const availableMin = mins.find((min) => min.state === "carrying") || 
                        mins.find((min) => min.state === "following");
   

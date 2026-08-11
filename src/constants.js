@@ -21,6 +21,10 @@ export const BOX_COL = 10;
 export const BOX_ROW = 8;
 export const BOX_INTERACTION_RADIUS = 1.5;
 
+export const DOMINION_COL = 2;
+export const DOMINION_ROW = 5;
+export const DOMINION_INTERACTION_RADIUS = 1.5;
+
 export const TOOL_TYPES = {
   HOE: "hoe",
   SEEDS: "seeds",

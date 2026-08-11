@@ -11,7 +11,8 @@ import {
   useToolAtCursor,
   tryHarvestCrop,
   tryTakeCropFromMin,
-  tryDepositCrop
+  tryDepositCrop,
+  tryDepositToDominion
 } from "./interactions.js";
 import { TOOL_TYPES } from "./constants.js";
 
@@ -23,7 +24,6 @@ const character = createCharacter();
 const spriteBank = createSpriteBank();
 const world = createWorld();
 
-// Default tool if none is set
 if (!world.selectedTool) {
   world.selectedTool = TOOL_TYPES.MIN;
 }
@@ -35,11 +35,8 @@ let cursor = null;
 let camera = { x: canvas.width / 2, y: 110 };
 let lastFrameTime = performance.now();
 
-/**
- * Updates HUD tool slots and the Min count badge
- */
 function syncHUD() {
-  const followingMins = mins.filter(m => m.state === "following").length;
+  const followingMins = mins.filter(m => m.state === "following" || m.state === "carrying").length;
 
   document.querySelectorAll(".tool-slot").forEach((slot) => {
     const toolName = slot.dataset.tool;
@@ -51,7 +48,6 @@ function syncHUD() {
       if (!countBadge) {
         countBadge = document.createElement("span");
         countBadge.className = "item-count";
-        // Basic inline styles in case CSS is missing
         Object.assign(countBadge.style, {
           position: 'absolute',
           bottom: '2px',
@@ -76,29 +72,20 @@ function syncHUD() {
   }
 }
 
-/**
- * Unified Action: ONLY throws if the Min tool is selected.
- * Otherwise, it only attempts farming actions.
- */
 function handleToolAction() {
   if (world.selectedTool === "min") {
     throwMin(character, mins, button, world.box, cursor);
   } if (world.selectedTool == "empty-hands"){
-     // 2. Try harvesting from ground
       const harvested = tryHarvestCrop(character, world);
       if (!harvested) {
-        // 3. Try taking from a Min
         const tookFromMin = tryTakeCropFromMin(character, mins);
         if (!tookFromMin) {
           
   } } }else {
-    // If hoe/seeds/watering-can is selected, it will NOT throw a min if it fails
     useToolAtCursor(world, cursor);
     }
   }
 
-
-// Toolbar Clicks
 document.querySelectorAll(".tool-slot").forEach((slot) => {
   slot.addEventListener("click", (e) => {
     e.stopPropagation(); 
@@ -107,7 +94,6 @@ document.querySelectorAll(".tool-slot").forEach((slot) => {
   });
 });
 
-// Keyboard Shortcuts (1-4)
 document.addEventListener("keydown", (event) => {
   const map = {
     Digit1: "hoe",
@@ -142,8 +128,6 @@ function updateCursorPosition(event) {
 }
 
 canvas.addEventListener("mousemove", updateCursorPosition);
-
-// Primary Click Handler
 canvas.addEventListener("click", () => {
   handleToolAction();
 });
@@ -156,25 +140,26 @@ function loop(timestamp) {
   updateWorld(world, deltaMs);
   updateMins(character, mins, button, world);
 
-    // E Key: Prioritize interaction, then tool use
-  if (keys.has("KeyE")) {
-    // 1. Try depositing first if holding something
-    const deposited = tryDepositCrop(character, world.box, world);
-    if (!deposited) {     
-          // 4. Collect loose Min
+  if (keys.has("KeyE") || keys.has("Space")) {
+    let interacted = tryDepositCrop(character, world.box, world);
+    
+    if (!interacted) {
+      interacted = tryDepositToDominion(character, world.dominion, world, mins);
+    }
+
+    if (!interacted) {     
           const collected = tryCollectMin(character, mins);
           if (!collected) {
-            // 5. Button
-            const interacted = tryInteractWithButton(character, button);
-            if (!interacted) {
+            const buttonInteracted = tryInteractWithButton(character, button);
+            if (!buttonInteracted) {
               handleToolAction();
             }
           }     
     }
     keys.delete("KeyE");
+    keys.delete("Space");
   }
 
-  // Space/F Keys
   if (keys.has("Space") || keys.has("KeyF")) {
     handleToolAction();
     keys.delete("Space");
