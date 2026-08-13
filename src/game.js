@@ -160,9 +160,8 @@ function loop(timestamp) {
     keys.delete("Space");
   }
 
-  if (keys.has("Space") || keys.has("KeyF")) {
+  if (keys.has("KeyF")) {
     handleToolAction();
-    keys.delete("Space");
     keys.delete("KeyF");
   }
 

@@ -149,7 +149,7 @@ export function updateMins(character, mins, button, world) {
     if (min.state === "loose") {
       const distToDominion = Math.hypot(min.col - dominion.col, min.row - dominion.row);
       // If loose within radius (e.g. 3.0) and box has crops
-      if (distToDominion < 3.0 && world.cropsCollected > 0) {
+      if (distToDominion < 3.0 && world.cropsCollected > 0 && world.selectedTool === "min") {
         min.state = "going_to_box";
       }
     }
