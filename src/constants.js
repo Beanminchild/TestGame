@@ -17,10 +17,20 @@ export const THROW_SUCCESS_BASE = 0.5;
 export const THROW_SUCCESS_PER_DISTANCE = 0.08;
 export const THROW_MAX_DISTANCE = 8;
 
+export const BOX_COL = 10;
+export const BOX_ROW = 8;
+export const BOX_INTERACTION_RADIUS = 1.5;
+
+export const DOMINION_COL = 2;
+export const DOMINION_ROW = 5;
+export const DOMINION_INTERACTION_RADIUS = 1.5;
+
 export const TOOL_TYPES = {
   HOE: "hoe",
   SEEDS: "seeds",
-  WATERING_CAN: "watering-can"
+  WATERING_CAN: "watering-can",
+  MIN: "min",
+  HANDS: "empty-hands"
 };
 
 export const TILE_TYPES = {
@@ -35,8 +45,8 @@ export const PLANT_STAGES = {
   CROP: "crop"
 };
 
-export const GROWTH_DURATION_MIN = 4000;
-export const GROWTH_DURATION_MAX = 9000;
+export const GROWTH_DURATION_MIN = 60000;
+export const GROWTH_DURATION_MAX = 90000;
 
 export const INV_SQRT2 = 1 / Math.sqrt(2);
 
@@ -71,7 +81,7 @@ export const DIRECTION_STYLES = [
 ];
 
 export const PLACEHOLDER_LOOK = {
-  hair: "#4a2f20",
+  hair: "#d95730",
   skin: "#f2c59c",
   coat: "#5b78d9",
   pants: "#263140",

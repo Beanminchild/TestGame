@@ -6,7 +6,8 @@ export function createCharacter() {
     row: Math.floor(rows / 2),
     dir: 0,
     walkFrame: 0,
-    stepCounter: 0
+    stepCounter: 0,
+    holdingCrop: false
   };
 }
 

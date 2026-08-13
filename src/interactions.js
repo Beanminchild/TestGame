@@ -14,7 +14,13 @@ import {
   TILE_TYPES,
   PLANT_STAGES,
   GROWTH_DURATION_MIN,
-  GROWTH_DURATION_MAX
+  GROWTH_DURATION_MAX,
+  BOX_COL,
+  BOX_ROW,
+  BOX_INTERACTION_RADIUS,
+  DOMINION_COL,
+  DOMINION_ROW,
+  DOMINION_INTERACTION_RADIUS
 } from "./constants.js";
 
 export function createButton() {
@@ -23,6 +29,20 @@ export function createButton() {
     row: 10,
     pressed: false,
     minCount: 0
+  };
+}
+
+export function createBox() {
+  return {
+    col: BOX_COL,
+    row: BOX_ROW
+  };
+}
+
+export function createDominion() {
+  return {
+    col: DOMINION_COL,
+    row: DOMINION_ROW
   };
 }
 
@@ -37,7 +57,8 @@ export function createWorld() {
     targetTile: null,
     throwOrigin: null,
     throwDistance: 0,
-    landed: false
+    landed: false,
+    isDelivering: false
   }));
 
   const tiles = Array.from({ length: rows }, (_, row) =>
@@ -53,6 +74,8 @@ export function createWorld() {
 
   return {
     button: createButton(),
+    box: createBox(),
+    dominion: createDominion(),
     mins,
     tiles,
     selectedTool: TOOL_TYPES.HOE,
@@ -79,10 +102,37 @@ function settleMin(min) {
   min.throwOrigin = null;
   min.throwDistance = 0;
   min.landed = true;
+  min.isDelivering = false;
+}
+
+export function spawnNewMin(mins, col, row, initialState = "loose") {
+  const newMin = {
+    id: Date.now() + Math.random(),
+    col: col,
+    row: row,
+    state: initialState,
+    followIndex: 0,
+    target: null,
+    targetTile: null,
+    throwOrigin: null,
+    throwDistance: 0,
+    landed: false,
+    isDelivering: false
+  };
+  mins.push(newMin);
+  return newMin;
 }
 
 export function updateMins(character, mins, button, world) {
+  const { box, dominion } = world;
+
+  // 1. Sort followers so that those carrying crops are at the front of the line
   const followers = mins.filter((min) => min.state === "following" || min.state === "carrying");
+  followers.sort((a, b) => {
+    if (a.state === "carrying" && b.state !== "carrying") return -1;
+    if (a.state !== "carrying" && b.state === "carrying") return 1;
+    return 0;
+  });
 
   followers.forEach((min, index) => {
     const vector = DIRECTION_VECTORS[character.dir] || { dx: 0, dy: 0 };
@@ -92,22 +142,49 @@ export function updateMins(character, mins, button, world) {
     const targetRow = character.row - vector.dy * offsetAmount;
 
     moveToward(min, targetCol, targetRow, 0.12);
-
-    if (min.state === "carrying") {
-      const distToChar = Math.hypot(min.col - character.col, min.row - character.row);
-      if (distToChar < 0.6) {
-        world.cropsCollected += 1;
-        min.state = "following";
-      }
-    }
   });
 
   mins.forEach((min) => {
+    // --- Dominion Automation Logic ---
+    if (min.state === "loose") {
+      const distToDominion = Math.hypot(min.col - dominion.col, min.row - dominion.row);
+      // If loose within radius (e.g. 3.0) and box has crops
+      if (distToDominion < 3.0 && world.cropsCollected > 0 && world.selectedTool === "min") {
+        min.state = "going_to_box";
+      }
+    }
+
+    if (min.state === "going_to_box") {
+      moveToward(min, box.col, box.row, 0.14);
+      if (Math.hypot(min.col - box.col, min.row - box.row) < 0.2) {
+        if (world.cropsCollected > 0) {
+          world.cropsCollected--;
+          min.state = "returning_to_dominion";
+        } else {
+          min.state = "loose";
+        }
+      }
+    }
+
+    if (min.state === "returning_to_dominion") {
+      moveToward(min, dominion.col, dominion.row, 0.14);
+      if (Math.hypot(min.col - dominion.col, min.row - dominion.row) < 0.2) {
+        // Create new min
+        spawnNewMin(mins, dominion.col, dominion.row, "following");
+        // Original min also follows
+        min.state = "following";
+      }
+    }
+
+    // --- Standard Actions ---
     if (min.state === "thrown") {
-      const target = min.target || { col: button.col, row: button.row };
+      const target = min.isDelivering 
+        ? { col: world.box.col, row: world.box.row }
+        : (min.target || { col: button.col, row: button.row });
+
       moveToward(min, target.col, target.row, 0.14);
 
-      if (min.throwOrigin) {
+      if (min.throwOrigin && !min.isDelivering) {
         min.throwDistance = Math.hypot(
           min.col - min.throwOrigin.col,
           min.row - min.throwOrigin.row
@@ -115,11 +192,17 @@ export function updateMins(character, mins, button, world) {
       }
 
       const distanceToTarget = Math.hypot(min.col - target.col, min.row - target.row);
-      const distanceToButton = Math.hypot(min.col - button.col, min.row - button.row);
       const reachedTarget = distanceToTarget <= 0.18;
-      const reachedMaxDistance = (min.throwDistance ?? 0) >= THROW_MAX_DISTANCE;
 
-      if (distanceToButton <= THROW_TARGET_RADIUS && (min.throwDistance ?? 0) <= THROW_MAX_DISTANCE) {
+      if (min.isDelivering && reachedTarget) {
+        world.cropsCollected += 1;
+        min.state = "following";
+        min.isDelivering = false;
+        return;
+      }
+
+      const distanceToButton = Math.hypot(min.col - button.col, min.row - button.row);
+      if (!min.isDelivering && distanceToButton <= THROW_TARGET_RADIUS && (min.throwDistance ?? 0) <= THROW_MAX_DISTANCE) {
         const successChance = Math.min(
           0.95,
           THROW_SUCCESS_BASE + THROW_SUCCESS_PER_DISTANCE * (1 - distanceToButton / THROW_TARGET_RADIUS)
@@ -132,17 +215,17 @@ export function updateMins(character, mins, button, world) {
         }
       }
 
-      if (reachedTarget || reachedMaxDistance) {
+      if (reachedTarget || (!min.isDelivering && (min.throwDistance ?? 0) >= THROW_MAX_DISTANCE)) {
         const tCol = Math.floor(target.col);
         const tRow = Math.floor(target.row);
         const tile = world.tiles[tRow]?.[tCol];
 
-        if (tile && tile.planted) {
+        if (!min.isDelivering && tile && tile.planted) {
           min.state = "harvesting";
           min.targetTile = { col: tCol, row: tRow };
           min.col = tCol + 0.5;
           min.row = tRow + 0.5;
-        } else {
+        } else if (!min.isDelivering) {
           settleMin(min);
         }
       }
@@ -163,7 +246,33 @@ export function updateMins(character, mins, button, world) {
   });
 }
 
+export function tryDepositCrop(character, box, world) {
+  if (!character.holdingCrop) return false;
+
+  const distance = Math.hypot(character.col - box.col, character.row - box.row);
+  if (distance <= BOX_INTERACTION_RADIUS) {
+    character.holdingCrop = false;
+    world.cropsCollected += 1;
+    return true;
+  }
+  return false;
+}
+
+export function tryDepositToDominion(character, dominion, world, mins) {
+  if (!character.holdingCrop) return false;
+
+  const distance = Math.hypot(character.col - dominion.col, character.row - dominion.row);
+  if (distance <= DOMINION_INTERACTION_RADIUS) {
+    character.holdingCrop = false;
+    spawnNewMin(mins, dominion.col, dominion.row, "loose");
+    return true;
+  }
+  return false;
+}
+
 export function tryHarvestCrop(character, world) {
+  if (character.holdingCrop) return false;
+
   const c = Math.floor(character.col);
   const r = Math.floor(character.row);
 
@@ -179,9 +288,25 @@ export function tryHarvestCrop(character, world) {
         tile.growth = 0;
         tile.stage = PLANT_STAGES.EMPTY;
         tile.type = TILE_TYPES.DIRT;
-        world.cropsCollected += 1;
+        character.holdingCrop = true;
         return true;
       }
+    }
+  }
+  return false;
+}
+
+export function tryTakeCropFromMin(character, mins) {
+  if (character.holdingCrop) return false;
+
+  for (const min of mins) {
+    if (min.state !== "carrying") continue;
+
+    const distance = Math.hypot(min.col - character.col, min.row - character.row);
+    if (distance <= MIN_INTERACTION_RADIUS) {
+      min.state = "following";
+      character.holdingCrop = true;
+      return true;
     }
   }
   return false;
@@ -202,45 +327,49 @@ export function tryCollectMin(character, mins) {
       return min;
     }
   }
-
   return null;
 }
 
 export function tryInteractWithButton(character, button) {
   const distance = Math.hypot(character.col - button.col, character.row - button.row);
-
   if (distance <= BUTTON_INTERACTION_RADIUS) {
     button.pressed = true;
     return true;
   }
-
   return false;
 }
 
-export function throwMin(character, mins, button, cursor = null) {
-  const availableMin = mins.find((min) => min.state === "following");
+export function throwMin(character, mins, button, box, cursor = null) {
+  const availableMin = mins.find((min) => min.state === "carrying") || 
+                       mins.find((min) => min.state === "following");
+  
   if (!availableMin) return null;
 
-  const target = cursor
-    ? { col: cursor.col, row: cursor.row }
-    : { col: button.col, row: button.row };
-
-  const dx = target.col - character.col;
-  const dy = target.row - character.row;
-  const distance = Math.hypot(dx, dy);
-
-  const clampedDistance = Math.min(distance, THROW_MAX_DISTANCE);
-
-  const finalTarget = {
-    col: character.col + (dx / Math.max(distance, 0.0001)) * clampedDistance,
-    row: character.row + (dy / Math.max(distance, 0.0001)) * clampedDistance
-  };
-
-  availableMin.state = "thrown";
-  availableMin.target = finalTarget;
   availableMin.throwOrigin = { col: character.col, row: character.row };
   availableMin.throwDistance = 0;
   availableMin.landed = false;
+
+  if (availableMin.state === "carrying") {
+    availableMin.state = "thrown";
+    availableMin.isDelivering = true;
+    availableMin.target = { col: box.col, row: box.row };
+  } else {
+    availableMin.isDelivering = false;
+    const target = cursor
+      ? { col: cursor.col, row: cursor.row }
+      : { col: button.col, row: button.row };
+
+    const dx = target.col - character.col;
+    const dy = target.row - character.row;
+    const distance = Math.hypot(dx, dy);
+    const clampedDistance = Math.min(distance, THROW_MAX_DISTANCE);
+
+    availableMin.target = {
+      col: character.col + (dx / Math.max(distance, 0.0001)) * clampedDistance,
+      row: character.row + (dy / Math.max(distance, 0.0001)) * clampedDistance
+    };
+    availableMin.state = "thrown";
+  }
 
   return availableMin;
 }
@@ -251,11 +380,9 @@ function clampTileValue(value, max) {
 
 export function useToolAtCursor(world, cursor) {
   if (!cursor) return false;
-
   const col = clampTileValue(cursor.col, cols);
   const row = clampTileValue(cursor.row, rows);
   const tile = world.tiles[row][col];
-
   if (!tile) return false;
 
   if (world.selectedTool === TOOL_TYPES.HOE) {
@@ -294,11 +421,8 @@ export function updateWorld(world, deltaMs) {
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
       const tile = world.tiles[row][col];
-
       if (!tile.planted || !tile.watered || tile.stage === PLANT_STAGES.CROP) continue;
-
       tile.growth += deltaMs;
-
       if (tile.growth >= tile.growDuration) {
         tile.stage = PLANT_STAGES.CROP;
       } else if (tile.growth >= tile.growDuration * 0.6) {

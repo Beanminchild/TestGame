@@ -109,6 +109,58 @@ function drawPlantOverlay(ctx, tile, col, row, camera) {
   ctx.restore();
 }
 
+export function drawBox(ctx, box, camera) {
+  const p = isoToScreen(box.col, box.row, camera);
+
+  ctx.save();
+  ctx.translate(p.x, p.y);
+
+  ctx.fillStyle = "#4e342e";
+  ctx.beginPath();
+  ctx.moveTo(-20, 0); ctx.lineTo(0, 10); ctx.lineTo(0, 25); ctx.lineTo(-20, 15); ctx.fill();
+
+  ctx.fillStyle = "#3e2723";
+  ctx.beginPath();
+  ctx.moveTo(20, 0); ctx.lineTo(0, 10); ctx.lineTo(0, 25); ctx.lineTo(20, 15); ctx.fill();
+
+  ctx.fillStyle = "#5d4037";
+  ctx.beginPath();
+  ctx.moveTo(0, -10); ctx.lineTo(20, 0); ctx.lineTo(0, 10); ctx.lineTo(-20, 0);
+  ctx.closePath(); ctx.fill();
+  
+  ctx.restore();
+}
+
+export function drawDominion(ctx, dominion, camera) {
+  const p = isoToScreen(dominion.col, dominion.row, camera);
+
+  ctx.save();
+  ctx.translate(p.x, p.y);
+
+  ctx.fillStyle = "#455a64";
+  ctx.beginPath();
+  ctx.moveTo(-25, 0); ctx.lineTo(0, 12); ctx.lineTo(25, 0); ctx.lineTo(0, -12);
+  ctx.fill();
+
+  const bob = Math.sin(Date.now() / 500) * 5;
+  ctx.translate(0, -25 + bob);
+  
+  ctx.fillStyle = "#90a4ae";
+  ctx.beginPath();
+  ctx.moveTo(0, -22); 
+  ctx.lineTo(14, 0);  
+  ctx.lineTo(0, 22);  
+  ctx.lineTo(-14, 0); 
+  ctx.fill();
+  
+  ctx.fillStyle = "#fff176";
+  ctx.beginPath();
+  ctx.arc(0, 0, 5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
 function buildSpriteFrame(directionIndex, frameIndex) {
   const sprite = document.createElement("canvas");
   sprite.width = 64;
@@ -118,60 +170,104 @@ function buildSpriteFrame(directionIndex, frameIndex) {
   const walkPose = WALK_POSES[frameIndex];
   const style = DIRECTION_STYLES[directionIndex];
 
-  g.fillStyle = "rgba(0,0,0,0.28)";
+  g.fillStyle = "rgba(0,0,0,0.15)";
   g.beginPath();
-  g.ellipse(32, 50, 18, 8, 0, 0, Math.PI * 2);
+  g.ellipse(32, 52, 12, 6, 0, 0, Math.PI * 2);
   g.fill();
 
-  const shirtX = 24 + style.bodyOffsetX;
-  const shirtY = 18 + style.bodyOffsetY;
+  const bx = 32 + style.bodyOffsetX;
+  const by = 35 + style.bodyOffsetY;
+  const hx = 32 + style.headOffsetX;
+  const hy = 20 + style.headOffsetY;
 
   g.fillStyle = PLACEHOLDER_LOOK.hair;
-  g.fillRect(24 + style.headOffsetX, 4 + style.headOffsetY, 16, 5);
+  const ptBounce = walkPose.legSwing * 0.5;
+  
+  function drawPigtail(x, y, isFront) {
+    g.beginPath();
+    g.ellipse(x, y + ptBounce, 5, 7, isFront ? 0.2 : -0.2, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = "#f4d683";
+    g.fillRect(x - 3, y - 1 + ptBounce, 6, 2);
+    g.fillRect(x - 1, y - 3 + ptBounce, 2, 6);
+    g.fillStyle = PLACEHOLDER_LOOK.hair;
+  }
 
-  g.fillStyle = PLACEHOLDER_LOOK.skin;
-  g.beginPath();
-  g.arc(32 + style.headOffsetX, 13 + style.headOffsetY, 8, 0, Math.PI * 2);
-  g.fill();
-
-  g.fillStyle = PLACEHOLDER_LOOK.coat;
-  g.fillRect(shirtX, shirtY, 16, 18);
-
-  g.fillStyle = PLACEHOLDER_LOOK.trim;
-  g.fillRect(shirtX + 3, shirtY + 15, 10, 2);
-
-  g.strokeStyle = PLACEHOLDER_LOOK.scarf;
-  g.lineWidth = 3;
-  g.beginPath();
-  g.moveTo(24 + style.bodyOffsetX, 25 + style.bodyOffsetY);
-  g.lineTo(40 + style.bodyOffsetX, 25 + style.bodyOffsetY);
-  g.stroke();
-
-  g.strokeStyle = PLACEHOLDER_LOOK.trim;
-  g.lineWidth = 4;
-  g.beginPath();
-  g.moveTo(24 + style.bodyOffsetX, 24 + style.bodyOffsetY);
-  g.lineTo(18 + style.bodyOffsetX + walkPose.armSwing, 30 + style.bodyOffsetY + walkPose.armSwing * 0.25);
-  g.moveTo(40 + style.bodyOffsetX, 24 + style.bodyOffsetY);
-  g.lineTo(46 + style.bodyOffsetX - walkPose.armSwing, 30 + style.bodyOffsetY - walkPose.armSwing * 0.25);
-  g.stroke();
+  if (directionIndex === 6 || directionIndex === 5 || directionIndex === 7) {
+    drawPigtail(hx - 9, hy + 2, false);
+    drawPigtail(hx + 9, hy + 2, true);
+  }
 
   g.strokeStyle = PLACEHOLDER_LOOK.pants;
-  g.lineWidth = 4;
+  g.lineWidth = 5;
+  g.lineCap = "round";
   g.beginPath();
-  g.moveTo(28 + style.bodyOffsetX, 36 + style.bodyOffsetY);
-  g.lineTo(28 + style.bodyOffsetX + walkPose.legSwing, 44 + style.bodyOffsetY + walkPose.legSwing * 0.35);
-  g.moveTo(36 + style.bodyOffsetX, 36 + style.bodyOffsetY);
-  g.lineTo(36 + style.bodyOffsetX - walkPose.legSwing, 44 + style.bodyOffsetY - walkPose.legSwing * 0.35);
+  g.moveTo(bx - 3, by + 5);
+  g.lineTo(bx - 5 + walkPose.legSwing, by + 16);
+  g.moveTo(bx + 3, by + 5);
+  g.lineTo(bx + 5 - walkPose.legSwing, by + 16);
   g.stroke();
 
-  g.strokeStyle = PLACEHOLDER_LOOK.boots;
-  g.lineWidth = 3;
+  const bodyGrad = g.createRadialGradient(bx - 3, by - 3, 2, bx, by, 12);
+  bodyGrad.addColorStop(0, "#7a95eb");
+  bodyGrad.addColorStop(1, PLACEHOLDER_LOOK.coat);
+  g.fillStyle = bodyGrad;
   g.beginPath();
-  g.moveTo(25 + style.bodyOffsetX + walkPose.legSwing * 0.4, 44 + style.bodyOffsetY + walkPose.legSwing * 0.35);
-  g.lineTo(31 + style.bodyOffsetX + walkPose.legSwing * 0.4, 48 + style.bodyOffsetY + walkPose.legSwing * 0.35);
-  g.moveTo(33 + style.bodyOffsetX - walkPose.legSwing * 0.4, 44 + style.bodyOffsetY - walkPose.legSwing * 0.35);
-  g.lineTo(39 + style.bodyOffsetX - walkPose.legSwing * 0.4, 48 + style.bodyOffsetY - walkPose.legSwing * 0.35);
+  g.ellipse(bx, by, 9, 11, 0, 0, Math.PI * 2);
+  g.fill();
+
+  const headGrad = g.createRadialGradient(hx - 2, hy - 2, 2, hx, hy, 10);
+  headGrad.addColorStop(0, "#ffe0c2");
+  headGrad.addColorStop(1, PLACEHOLDER_LOOK.skin);
+  g.fillStyle = headGrad;
+  g.beginPath();
+  g.arc(hx, hy, 8.5, 0, Math.PI * 2);
+  g.fill();
+
+  g.fillStyle = PLACEHOLDER_LOOK.hair;
+  g.beginPath();
+  g.arc(hx, hy - 1, 9, Math.PI, 0);
+  g.fill();
+  
+  if (directionIndex >= 1 && directionIndex <= 3) { 
+    g.beginPath();
+    g.moveTo(hx - 9, hy - 1);
+    g.quadraticCurveTo(hx - 5, hy + 4, hx, hy - 1);
+    g.quadraticCurveTo(hx + 5, hy + 4, hx + 9, hy - 1);
+    g.fill();
+  }
+
+  if (directionIndex >= 1 && directionIndex <= 3) {
+    drawPigtail(hx - 10, hy + 2, false);
+    drawPigtail(hx + 10, hy + 2, true);
+  } else if (directionIndex === 0) {
+    drawPigtail(hx - 2, hy + 2, false);
+  } else if (directionIndex === 4) {
+    drawPigtail(hx + 2, hy + 2, true);
+  }
+
+  g.fillStyle = "#333";
+  const eyeY = hy + 1;
+  if (directionIndex === 2) {
+    g.fillRect(hx - 4, eyeY, 2, 2); g.fillRect(hx + 2, eyeY, 2, 2);
+  } else if (directionIndex === 1) {
+    g.fillRect(hx - 1, eyeY, 2, 2); g.fillRect(hx + 4, eyeY, 2, 2);
+  } else if (directionIndex === 3) {
+    g.fillRect(hx - 6, eyeY, 2, 2); g.fillRect(hx - 1, eyeY, 2, 2);
+  } else if (directionIndex === 0) {
+    g.fillRect(hx + 4, eyeY, 2, 2);
+  } else if (directionIndex === 4) {
+    g.fillRect(hx - 6, eyeY, 2, 2);
+  }
+
+  g.strokeStyle = "#4a65bd";
+  g.lineWidth = 4.5;
+  g.beginPath();
+  const armAngle = walkPose.armSwing * 0.1;
+  g.moveTo(bx, by - 5);
+  g.lineTo(bx - 8 + walkPose.armSwing, by + 4);
+  g.moveTo(bx, by - 5);
+  g.lineTo(bx + 8 - walkPose.armSwing, by + 4);
   g.stroke();
 
   return sprite;
@@ -194,6 +290,19 @@ export function drawCharacter(ctx, character, spriteBank, camera) {
   const frameIndex = character.walkFrame % 2;
   const sprite = spriteBank[character.dir][frameIndex];
   ctx.drawImage(sprite, p.x - 32, p.y - 58, 64, 64);
+
+  if (character.holdingCrop) {
+    ctx.save();
+    ctx.translate(p.x, p.y - 50); 
+    ctx.fillStyle = "#4a8f3b";
+    ctx.beginPath();
+    ctx.arc(0, -8, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#d9b44a";
+    ctx.fillRect(-2, -2, 4, 6);
+    ctx.restore();
+  }
 }
 
 export function drawMin(ctx, min, camera) {
@@ -203,11 +312,16 @@ export function drawMin(ctx, min, camera) {
   ctx.translate(p.x, p.y - 6);
 
   ctx.fillStyle = (min.state === "following" || min.state === "carrying") ? "#f7c873" : "#8c5b2b";
+  
+  if (min.state === "going_to_box" || min.state === "returning_to_dominion") {
+    ctx.fillStyle = "#64b5f6";
+  }
+
   ctx.beginPath();
   ctx.arc(0, 0, 8, 0, Math.PI * 2);
   ctx.fill();
 
-  if (min.state === "carrying") {
+  if (min.state === "carrying" || min.isDelivering || min.state === "returning_to_dominion") {
     ctx.fillStyle = "#d9b44a";
     ctx.beginPath();
     ctx.arc(0, -12, 5, 0, Math.PI * 2);
@@ -216,6 +330,7 @@ export function drawMin(ctx, min, camera) {
 
   ctx.fillStyle = "#3a210f";
   ctx.fillRect(-3, -1, 6, 2);
+
   ctx.restore();
 }
 
@@ -288,6 +403,8 @@ export function drawScene(ctx, canvas, character, spriteBank, camera, button, mi
     drawPlantOverlay(ctx, tile, c, r, camera);
   }
 
+  drawBox(ctx, world.box, camera);
+  drawDominion(ctx, world.dominion, camera);
   drawButton(ctx, button, camera);
 
   for (const min of mins) {

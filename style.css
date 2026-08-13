@@ -87,3 +87,25 @@ canvas {
   color: #d9b44a;
   border: 1px solid rgba(217, 180, 74, 0.2);
 }
+
+.tool-slot { position: relative; }
+.item-count {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  padding: 0 4px;
+  border-radius: 4px;
+  font-size: 10px;
+}
+.min-count {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: rgba(255,0,0,0.6);
+  color: white;
+  padding: 0 4px;
+  border-radius: 4px;
+  font-size: 10px;
+}
