@@ -100,9 +100,9 @@ canvas {
   font-size: 10px;
 }
 .min-count {
-  position: absolute;
+  /* position: absolute;
   top: 2px;
-  right: 2px;
+  right: 2px; */
   background: rgba(255,0,0,0.6);
   color: white;
   padding: 0 4px;

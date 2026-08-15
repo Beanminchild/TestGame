@@ -20,8 +20,11 @@ import {
   BOX_INTERACTION_RADIUS,
   DOMINION_COL,
   DOMINION_ROW,
-  DOMINION_INTERACTION_RADIUS
+  DOMINION_INTERACTION_RADIUS,
+ 
 } from "./constants.js";
+
+let waterCanFillAmount = 5;
 
 export function createButton() {
   return {
@@ -79,7 +82,8 @@ export function createWorld() {
     mins,
     tiles,
     selectedTool: TOOL_TYPES.HOE,
-    cropsCollected: 0
+    cropsCollected: 0,
+    waterCanFillAmount: 5
   };
 }
 
@@ -146,10 +150,10 @@ export function updateMins(character, mins, button, world) {
 
   mins.forEach((min) => {
     // --- Dominion Automation Logic ---
-    if (min.state === "loose") {
+    if (min.state === "thrown") {
       const distToDominion = Math.hypot(min.col - dominion.col, min.row - dominion.row);
       // If loose within radius (e.g. 3.0) and box has crops
-      if (distToDominion < 3.0 && world.cropsCollected > 0 && world.selectedTool === "min") {
+      if (distToDominion < 1.5 && world.cropsCollected > 0 && world.selectedTool === "min") {
         min.state = "going_to_box";
       }
     }
@@ -409,6 +413,8 @@ export function useToolAtCursor(world, cursor) {
   if (world.selectedTool === TOOL_TYPES.WATERING_CAN) {
     if (tile.planted) {
       tile.watered = true;
+      world.waterCanFillAmount-=1;
+      
       return true;
     }
     return false;

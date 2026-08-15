@@ -37,7 +37,7 @@ let lastFrameTime = performance.now();
 
 function syncHUD() {
   const followingMins = mins.filter(m => m.state === "following" || m.state === "carrying").length;
-
+  
   document.querySelectorAll(".tool-slot").forEach((slot) => {
     const toolName = slot.dataset.tool;
     const isSelected = toolName === world.selectedTool;
@@ -63,6 +63,27 @@ function syncHUD() {
         slot.appendChild(countBadge);
       }
       countBadge.textContent = followingMins;
+    }
+    if (toolName === "watering-can") {
+      let countBadge = slot.querySelector(".item-count");
+      if (!countBadge) {
+        countBadge = document.createElement("span");
+        countBadge.className = "item-count";
+        Object.assign(countBadge.style, {
+          position: 'absolute',
+          bottom: '2px',
+          right: '2px',
+          background: 'rgba(0,0,0,0.6)',
+          color: 'white',
+          padding: '0 4px',
+          borderRadius: '4px',
+          fontSize: '10px',
+          pointerEvents: 'none'
+        });
+        slot.style.position = 'relative';
+        slot.appendChild(countBadge);
+      }
+      countBadge.textContent = world.waterCanFillAmount;
     }
   });
   
@@ -140,7 +161,7 @@ function loop(timestamp) {
   updateWorld(world, deltaMs);
   updateMins(character, mins, button, world);
 
-  if (keys.has("KeyE") || keys.has("Space")) {
+  if (keys.has("KeynotE") || keys.has("Space")) {
     let interacted = tryDepositCrop(character, world.box, world);
     
     if (!interacted) {
@@ -152,10 +173,15 @@ function loop(timestamp) {
           if (!collected) {
             const buttonInteracted = tryInteractWithButton(character, button);
             if (!buttonInteracted) {
-              handleToolAction();
-            }
-          }     
-    }
+              //trying to refine controls a bit to do the action that feels best at given time without doing unwanted actions
+              //handleToolAction();
+              const harvested = tryHarvestCrop(character, world);
+              if (!harvested) {
+                const tookFromMin = tryTakeCropFromMin(character, mins);
+                }
+            }  
+          }   
+      }
     keys.delete("KeyE");
     keys.delete("Space");
   }
