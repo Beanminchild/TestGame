@@ -161,6 +161,64 @@ export function drawDominion(ctx, dominion, camera) {
   ctx.restore();
 }
 
+export function drawWaterPond(ctx, pond, camera) {
+  if (!pond) return;
+  const c = pond.col;
+  const r = pond.row;
+  const size = 2; // 4x4 pond
+
+  const time = Date.now() / 1000;
+
+  ctx.save();
+  
+  // Base Water Layer
+  const pTop = isoToScreen(c, r, camera);
+  const pRight = isoToScreen(c + size, r, camera);
+  const pBottom = isoToScreen(c + size, r + size, camera);
+  const pLeft = isoToScreen(c, r + size, camera);
+
+  ctx.beginPath();
+  ctx.moveTo(pTop.x, pTop.y - TILE_H / 2);
+  ctx.lineTo(pRight.x + TILE_W / 2, pRight.y);
+  ctx.lineTo(pBottom.x, pBottom.y + TILE_H / 2);
+  ctx.lineTo(pLeft.x - TILE_W / 2, pLeft.y);
+  ctx.closePath();
+  ctx.fillStyle = "#1e88e5";
+  ctx.fill();
+
+  // Moving "Squiggly" Ripple Effect
+  for (let i = 0; i < 3; i++) {
+    const shiftX = Math.sin(time + i) * 5;
+    const shiftY = Math.cos(time * 0.8 + i) * 3;
+    
+    ctx.beginPath();
+    // Offset each point slightly to create a moving wavy shape
+    ctx.moveTo(pTop.x + shiftX, pTop.y - TILE_H / 2 + shiftY);
+    ctx.lineTo(pRight.x + TILE_W / 2 - shiftX, pRight.y + shiftY);
+    ctx.lineTo(pBottom.x - shiftX, pBottom.y + TILE_H / 2 - shiftY);
+    ctx.lineTo(pLeft.x - TILE_W / 2 + shiftX, pLeft.y - shiftY);
+    ctx.closePath();
+    
+    ctx.fillStyle = i % 2 === 0 ? "rgba(100, 181, 246, 0.4)" : "rgba(13, 71, 161, 0.3)";
+    ctx.fill();
+  }
+
+  // White "Specular" Ripples
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+  ctx.lineWidth = 2;
+  for (let j = 0; j < 2; j++) {
+    const rx = pTop.x + Math.sin(time + j * 2) * 20;
+    const ry = pTop.y + 20 + j * 10;
+    ctx.beginPath();
+    ctx.moveTo(rx - 15, ry);
+    ctx.quadraticCurveTo(rx, ry + Math.sin(time * 2) * 5, rx + 15, ry);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+
 function buildSpriteFrame(directionIndex, frameIndex) {
   const sprite = document.createElement("canvas");
   sprite.width = 64;
@@ -405,6 +463,7 @@ export function drawScene(ctx, canvas, character, spriteBank, camera, button, mi
 
   drawBox(ctx, world.box, camera);
   drawDominion(ctx, world.dominion, camera);
+  drawWaterPond(ctx, world.pond, camera);
   drawButton(ctx, button, camera);
 
   for (const min of mins) {

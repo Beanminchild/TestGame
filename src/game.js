@@ -12,7 +12,9 @@ import {
   tryHarvestCrop,
   tryTakeCropFromMin,
   tryDepositCrop,
-  tryDepositToDominion
+  tryDepositToDominion,
+  tryInteractWithPond
+
 } from "./interactions.js";
 import { TOOL_TYPES } from "./constants.js";
 
@@ -158,7 +160,7 @@ function loop(timestamp) {
   lastFrameTime = timestamp;
 
   updateCharacterFromControls(character, keys, deltaMs);
-  updateWorld(world, deltaMs);
+  updateWorld(world, deltaMs, character);
   updateMins(character, mins, button, world);
 
   if (keys.has("KeynotE") || keys.has("Space")) {
@@ -166,6 +168,10 @@ function loop(timestamp) {
     
     if (!interacted) {
       interacted = tryDepositToDominion(character, world.dominion, world, mins);
+    }
+    // Add Pond interaction check
+    if (!interacted) {
+      interacted = tryInteractWithPond(character, world);
     }
 
     if (!interacted) {     

@@ -21,6 +21,12 @@ import {
   DOMINION_COL,
   DOMINION_ROW,
   DOMINION_INTERACTION_RADIUS,
+  WATER_CAN_MAX,
+  REFILL_RATE_MS,
+  WATER_POND_COL,
+  WATER_POND_ROW,
+  WATER_POND_INTERACTION_RADIUS
+
  
 } from "./constants.js";
 
@@ -79,12 +85,34 @@ export function createWorld() {
     button: createButton(),
     box: createBox(),
     dominion: createDominion(),
+    pond: { col: WATER_POND_COL, row: WATER_POND_ROW },
     mins,
     tiles,
     selectedTool: TOOL_TYPES.HOE,
     cropsCollected: 0,
-    waterCanFillAmount: 5
+    waterCanFillAmount: 5,
+    isRefillingWater: false, 
+    refillTimer: 0
   };
+}
+
+
+// Logic to check if player can start refilling
+export function tryInteractWithPond(character, world) {
+  if (world.selectedTool !== TOOL_TYPES.WATERING_CAN) return false;
+  if (world.waterCanFillAmount >= WATER_CAN_MAX) return false;
+
+  // Pond center (for a 4x4 pond starting at COL, ROW)
+  const pondCenterX = WATER_POND_COL + 1.5; 
+  const pondCenterY = WATER_POND_ROW + 1.5;
+  const distance = Math.hypot(character.col - pondCenterX, character.row - pondCenterY);
+
+  // Interaction check (radius + pond half-width)
+  if (distance <= WATER_POND_INTERACTION_RADIUS + 2) {
+    world.isRefillingWater = true;
+    return true;
+  }
+  return false;
 }
 
 function moveToward(min, targetCol, targetRow, speed = 0.12) {
@@ -411,7 +439,7 @@ export function useToolAtCursor(world, cursor) {
   }
 
   if (world.selectedTool === TOOL_TYPES.WATERING_CAN) {
-    if (tile.planted) {
+    if (tile.planted && !tile.watered && world.waterCanFillAmount > 0) {
       tile.watered = true;
       world.waterCanFillAmount-=1;
       
@@ -423,11 +451,13 @@ export function useToolAtCursor(world, cursor) {
   return false;
 }
 
-export function updateWorld(world, deltaMs) {
+export function updateWorld(world, deltaMs, character) {
+  // 1. Handle Crop Growth
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
       const tile = world.tiles[row][col];
       if (!tile.planted || !tile.watered || tile.stage === PLANT_STAGES.CROP) continue;
+      
       tile.growth += deltaMs;
       if (tile.growth >= tile.growDuration) {
         tile.stage = PLANT_STAGES.CROP;
@@ -438,4 +468,29 @@ export function updateWorld(world, deltaMs) {
       }
     }
   }
+
+  // 2. Handle Water Refill Logic (Moved outside the loops)
+  if (world.isRefillingWater && character) {
+    const pondCenterX = WATER_POND_COL + 1.5;
+    const pondCenterY = WATER_POND_ROW + 1.5;
+    const distance = Math.hypot(character.col - pondCenterX, character.row - pondCenterY);
+
+    // Stop refilling if player moves away or switches tools
+    if (distance > WATER_POND_INTERACTION_RADIUS + 2 || world.selectedTool !== TOOL_TYPES.WATERING_CAN) {
+      world.isRefillingWater = false;
+      world.refillTimer = 0;
+    } else {
+      world.refillTimer += deltaMs;
+      if (world.refillTimer >= REFILL_RATE_MS) {
+        if (world.waterCanFillAmount < WATER_CAN_MAX) {
+          world.waterCanFillAmount++;
+          world.refillTimer = 0;
+        } else {
+          world.isRefillingWater = false;
+          world.refillTimer = 0;
+        }
+      }
+    }
+  }
 }
+

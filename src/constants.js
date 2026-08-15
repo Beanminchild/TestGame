@@ -25,7 +25,12 @@ export const DOMINION_COL = 2;
 export const DOMINION_ROW = 5;
 export const DOMINION_INTERACTION_RADIUS = 1.5;
 
+export const WATER_POND_COL = 5;
+export const WATER_POND_ROW = 5;
+export const WATER_POND_INTERACTION_RADIUS = 1.5;
 
+export const WATER_CAN_MAX = 7;
+export const REFILL_RATE_MS = 400;
 
 export const TOOL_TYPES = {
   HOE: "hoe",
