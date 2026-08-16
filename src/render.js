@@ -161,7 +161,66 @@ export function drawDominion(ctx, dominion, camera) {
   ctx.restore();
 }
 
-function buildSpriteFrame(directionIndex, frameIndex) {
+export function drawWaterPond(ctx, pond, camera) {
+  if (!pond) return;
+  const c = pond.col;
+  const r = pond.row;
+  const size = 2; // 4x4 pond
+
+  const time = Date.now() / 1000;
+
+  ctx.save();
+  
+  // Base Water Layer
+  const pTop = isoToScreen(c, r, camera);
+  const pRight = isoToScreen(c + size, r, camera);
+  const pBottom = isoToScreen(c + size, r + size, camera);
+  const pLeft = isoToScreen(c, r + size, camera);
+
+  ctx.beginPath();
+  ctx.moveTo(pTop.x, pTop.y - TILE_H / 2);
+  ctx.lineTo(pRight.x + TILE_W / 2, pRight.y);
+  ctx.lineTo(pBottom.x, pBottom.y + TILE_H / 2);
+  ctx.lineTo(pLeft.x - TILE_W / 2, pLeft.y);
+  ctx.closePath();
+  ctx.fillStyle = "#1e88e5";
+  ctx.fill();
+
+  // Moving "Squiggly" Ripple Effect
+  for (let i = 0; i < 3; i++) {
+    const shiftX = Math.sin(time + i) * 5;
+    const shiftY = Math.cos(time * 0.8 + i) * 3;
+    
+    ctx.beginPath();
+    // Offset each point slightly to create a moving wavy shape
+    ctx.moveTo(pTop.x + shiftX, pTop.y - TILE_H / 2 + shiftY);
+    ctx.lineTo(pRight.x + TILE_W / 2 - shiftX, pRight.y + shiftY);
+    ctx.lineTo(pBottom.x - shiftX, pBottom.y + TILE_H / 2 - shiftY);
+    ctx.lineTo(pLeft.x - TILE_W / 2 + shiftX, pLeft.y - shiftY);
+    ctx.closePath();
+    
+    ctx.fillStyle = i % 2 === 0 ? "rgba(100, 181, 246, 0.4)" : "rgba(13, 71, 161, 0.3)";
+    ctx.fill();
+  }
+
+  // White "Specular" Ripples
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+  ctx.lineWidth = 2;
+  for (let j = 0; j < 2; j++) {
+    const rx = pTop.x + Math.sin(time + j * 2) * 20;
+    const ry = pTop.y + 20 + j * 10;
+    ctx.beginPath();
+    ctx.moveTo(rx - 15, ry);
+    ctx.quadraticCurveTo(rx, ry + Math.sin(time * 2) * 5, rx + 15, ry);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+
+function buildSpriteFrame(directionIndex, frameIndex, look = PLACEHOLDER_LOOK, options = {}) {
+  const { showPigtails = true } = options;
   const sprite = document.createElement("canvas");
   sprite.width = 64;
   sprite.height = 64;
@@ -180,7 +239,7 @@ function buildSpriteFrame(directionIndex, frameIndex) {
   const hx = 32 + style.headOffsetX;
   const hy = 20 + style.headOffsetY;
 
-  g.fillStyle = PLACEHOLDER_LOOK.hair;
+  g.fillStyle = look.hair;
   const ptBounce = walkPose.legSwing * 0.5;
   
   function drawPigtail(x, y, isFront) {
@@ -190,15 +249,15 @@ function buildSpriteFrame(directionIndex, frameIndex) {
     g.fillStyle = "#f4d683";
     g.fillRect(x - 3, y - 1 + ptBounce, 6, 2);
     g.fillRect(x - 1, y - 3 + ptBounce, 2, 6);
-    g.fillStyle = PLACEHOLDER_LOOK.hair;
+    g.fillStyle = look.hair;
   }
 
-  if (directionIndex === 6 || directionIndex === 5 || directionIndex === 7) {
+  if (showPigtails && (directionIndex === 6 || directionIndex === 5 || directionIndex === 7)) {
     drawPigtail(hx - 9, hy + 2, false);
     drawPigtail(hx + 9, hy + 2, true);
   }
 
-  g.strokeStyle = PLACEHOLDER_LOOK.pants;
+  g.strokeStyle = look.pants;
   g.lineWidth = 5;
   g.lineCap = "round";
   g.beginPath();
@@ -210,7 +269,7 @@ function buildSpriteFrame(directionIndex, frameIndex) {
 
   const bodyGrad = g.createRadialGradient(bx - 3, by - 3, 2, bx, by, 12);
   bodyGrad.addColorStop(0, "#7a95eb");
-  bodyGrad.addColorStop(1, PLACEHOLDER_LOOK.coat);
+  bodyGrad.addColorStop(1, look.coat);
   g.fillStyle = bodyGrad;
   g.beginPath();
   g.ellipse(bx, by, 9, 11, 0, 0, Math.PI * 2);
@@ -218,13 +277,13 @@ function buildSpriteFrame(directionIndex, frameIndex) {
 
   const headGrad = g.createRadialGradient(hx - 2, hy - 2, 2, hx, hy, 10);
   headGrad.addColorStop(0, "#ffe0c2");
-  headGrad.addColorStop(1, PLACEHOLDER_LOOK.skin);
+  headGrad.addColorStop(1, look.skin);
   g.fillStyle = headGrad;
   g.beginPath();
   g.arc(hx, hy, 8.5, 0, Math.PI * 2);
   g.fill();
 
-  g.fillStyle = PLACEHOLDER_LOOK.hair;
+  g.fillStyle = look.hair;
   g.beginPath();
   g.arc(hx, hy - 1, 9, Math.PI, 0);
   g.fill();
@@ -237,13 +296,15 @@ function buildSpriteFrame(directionIndex, frameIndex) {
     g.fill();
   }
 
-  if (directionIndex >= 1 && directionIndex <= 3) {
-    drawPigtail(hx - 10, hy + 2, false);
-    drawPigtail(hx + 10, hy + 2, true);
-  } else if (directionIndex === 0) {
-    drawPigtail(hx - 2, hy + 2, false);
-  } else if (directionIndex === 4) {
-    drawPigtail(hx + 2, hy + 2, true);
+  if (showPigtails) {
+    if (directionIndex >= 1 && directionIndex <= 3) {
+      drawPigtail(hx - 10, hy + 2, false);
+      drawPigtail(hx + 10, hy + 2, true);
+    } else if (directionIndex === 0) {
+      drawPigtail(hx - 2, hy + 2, false);
+    } else if (directionIndex === 4) {
+      drawPigtail(hx + 2, hy + 2, true);
+    }
   }
 
   g.fillStyle = "#333";
@@ -273,12 +334,12 @@ function buildSpriteFrame(directionIndex, frameIndex) {
   return sprite;
 }
 
-export function createSpriteBank() {
+export function createSpriteBank(look = PLACEHOLDER_LOOK, options = {}) {
   const bank = [];
   for (let dir = 0; dir < 8; dir++) {
     const frames = [];
     for (let frame = 0; frame < 2; frame++) {
-      frames.push(buildSpriteFrame(dir, frame));
+      frames.push(buildSpriteFrame(dir, frame, look, options));
     }
     bank.push(frames);
   }
@@ -380,8 +441,31 @@ export function drawCursor(ctx, cursor, camera) {
   ctx.restore();
 }
 
-export function drawScene(ctx, canvas, character, spriteBank, camera, button, mins, cursor, world) {
+export function getTimeTint(progress) {
+  const p = Math.min(1, Math.max(0, progress ?? 0));
+
+  // Dawn (0% - 20%)
+  if (p < 0.2) {
+    return { r: 255, g: 240, b: 180, a: 0.15 };
+  }
+  // Full Day (20% - 60%) - Clear/No tint
+  if (p < 0.6) {
+    return { r: 255, g: 255, b: 255, a: 0 };
+  }
+  // Dusk (60% - 80%)
+  if (p < 0.8) {
+    return { r: 255, g: 130, b: 80, a: 0.4 };
+  }
+  // Night (80% - 100%)
+  return { r: 40, g: 40, b: 120, a: 0.5 };
+}
+
+export function drawScene(ctx, canvas, character, spriteBank, camera, button, mins, cursor, world, shopkeeper, shopkeeperSpriteBank) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const tint = getTimeTint(world.dayProgress || 0);
+  ctx.fillStyle = `rgba(${tint.r}, ${tint.g}, ${tint.b}, ${tint.a})`;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   const order = [];
   for (let r = 0; r < rows; r++) {
@@ -403,9 +487,26 @@ export function drawScene(ctx, canvas, character, spriteBank, camera, button, mi
     drawPlantOverlay(ctx, tile, c, r, camera);
   }
 
+
+    // time cycle tint over world 
+  //const tint = getTimeTint(world.dayProgress || 0);
+  if (tint.a > 0) {
+    ctx.save();
+    // 'multiply' makes the world look naturally darker/tinted
+    // 'source-over' (default) just adds a colored film
+    if (world.dayProgress > 0.6) {
+        ctx.globalCompositeOperation = 'multiply';
+    }
+    ctx.fillStyle = `rgba(${tint.r}, ${tint.g}, ${tint.b}, ${tint.a})`;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+  }
+
   drawBox(ctx, world.box, camera);
   drawDominion(ctx, world.dominion, camera);
+  drawWaterPond(ctx, world.pond, camera);
   drawButton(ctx, button, camera);
+  drawCharacter(ctx, shopkeeper, shopkeeperSpriteBank, camera);
 
   for (const min of mins) {
     if (min.state !== "delivered") {
@@ -413,6 +514,9 @@ export function drawScene(ctx, canvas, character, spriteBank, camera, button, mi
     }
   }
 
+ 
+
   drawCursor(ctx, cursor, camera);
   drawCharacter(ctx, character, spriteBank, camera);
+   
 }

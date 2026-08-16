@@ -25,6 +25,18 @@ export const DOMINION_COL = 2;
 export const DOMINION_ROW = 5;
 export const DOMINION_INTERACTION_RADIUS = 1.5;
 
+export const WATER_POND_COL = 5;
+export const WATER_POND_ROW = 5;
+export const WATER_POND_INTERACTION_RADIUS = 1.5;
+
+export const SHOPKEEPER_COL = 9;
+export const SHOPKEEPER_ROW = 7;
+
+export const WATER_CAN_MAX = 7;
+export const REFILL_RATE_MS = 1400;
+
+export const SEED_MAX = 99;
+
 export const TOOL_TYPES = {
   HOE: "hoe",
   SEEDS: "seeds",
@@ -84,6 +96,16 @@ export const PLACEHOLDER_LOOK = {
   hair: "#d95730",
   skin: "#f2c59c",
   coat: "#5b78d9",
+  pants: "#263140",
+  trim: "#f4d683",
+  boots: "#1e2430",
+  scarf: "#c95f5f"
+};
+
+export const SHOPKEEPER_LOOK = {
+  hair: "#111111",
+  skin: "#f2c59c",
+  coat: "#8b6f47",
   pants: "#263140",
   trim: "#f4d683",
   boots: "#1e2430",

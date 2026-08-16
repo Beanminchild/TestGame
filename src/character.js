@@ -1,4 +1,11 @@
-import { cols, rows, DIRECTION_VECTORS, moveStepSize, moveStepMs } from "./constants.js";
+import { cols, 
+  rows, 
+  DIRECTION_VECTORS, 
+  moveStepSize, 
+  moveStepMs,
+  WATER_POND_COL,
+  WATER_POND_ROW 
+} from "./constants.js";
 
 export function createCharacter() {
   return {
@@ -40,7 +47,10 @@ export function updateCharacterFromControls(character, keys, deltaMs) {
       const vector = DIRECTION_VECTORS[dirIndex];
 
       character.col += vector.dx * moveStepSize;
-      character.row += vector.dy * moveStepSize;
+      character.row += vector.dy * moveStepSize;    
+
+     
+      
       clampCharacter(character);
 
       character.dir = dirIndex;

@@ -6,6 +6,15 @@ body {
     radial-gradient(circle at top, #24331e 0%, #121712 56%, #0b0f0a 100%);
   color: #f2f2e8;
   font-family: system-ui, sans-serif;
+  width: 100%;
+  height: 100%;
+  --color1: rgb(108, 231, 221);
+  --color2: rgb(250, 255, 178);
+  background-color: var(--color1);
+  background-image: linear-gradient(45deg, var(--color2) 25%, transparent 25%, transparent 75%, var(--color2) 75%, var(--color2)), 
+                    linear-gradient(45deg, var(--color2) 25%, var(--color1) 25%, var(--color1) 75%, var(--color2) 75%, var(--color2));
+  background-size: 60px 60px;
+  background-position: 0 0, 30px 30px;
 }
 
 body {
@@ -19,28 +28,34 @@ body {
   gap: 12px;
 }
 
+/* --- HUD: Harvest Moon 64 Wooden Style --- */
 .hud {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  backdrop-filter: blur(4px);
+  padding: 12px 20px;
+  background: #8d6e63; /* Medium Wood */
+  border: 4px solid #5d4037; /* Dark Wood Frame */
+  border-radius: 8px;
+  box-shadow: 0 4px 0 #3e2723, inset 0 2px 0 rgba(255,255,255,0.2);
 }
 
 .hud h1 {
   margin: 0;
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 2px 2px 0 #3e2723;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .hud p {
   margin: 0;
-  color: #d5ddc4;
-  font-size: 0.92rem;
+  color: #fbe9e7;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
 canvas {
@@ -48,44 +63,51 @@ canvas {
   height: auto;
   display: block;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+  border: 4px solid #5d4037;
+  background: linear-gradient(180deg, rgba(254, 255, 255, 1.00), rgba(232, 247, 255, 1.00));
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
 
+/* --- Inventory & Tools: Carved Wooden Style --- */
 .inventory {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px;
-  background: rgba(20, 24, 18, 0.86);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 14px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+  gap: 12px;
+  padding: 16px;
+  background: #a1887f; /* Lighter wood board */
+  border: 5px solid #5d4037;
+  border-radius: 12px;
+  box-shadow: 0 6px 0 #3e2723;
 }
 
 .tool-slot {
-  border: 1px solid rgba(255,255,255,0.14);
-  background: linear-gradient(180deg, #3d462f, #2b3323);
-  color: #f5eedf;
+  border: 3px solid #5d4037;
+  background: #fbe9e7; /* Parchment/Paper color */
+  color: #3e2723;
   padding: 10px 14px;
-  border-radius: 10px;
+  border-radius: 6px;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 800;
+  transition: transform 0.1s;
 }
 
 .tool-slot.active {
-  outline: 2px solid #8edc6c;
-  background: linear-gradient(180deg, #51663c, #37502a);
+  outline: none;
+  background: #fff;
+  border-color: #7cb342;
+  transform: translateY(-4px);
+  box-shadow: 0 4px 0 #33691e;
 }
 
 .crop-counter {
   margin-left: auto;
-  padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  font-weight: 700;
-  color: #d9b44a;
-  border: 1px solid rgba(217, 180, 74, 0.2);
+  padding: 10px 18px;
+  background: #5d4037;
+  border-radius: 6px;
+  font-weight: 800;
+  color: #fff;
+  border: 2px solid #3e2723;
+  text-shadow: 1px 1px 0 #000;
 }
 
 .tool-slot { position: relative; }
@@ -93,19 +115,269 @@ canvas {
   position: absolute;
   bottom: 2px;
   right: 2px;
-  background: rgba(0,0,0,0.6);
+  background: #5d4037;
+  color: white;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-size: 11px;
+  border: 1px solid #3e2723;
+}
+
+.min-count {
+  background: #c62828;
   color: white;
   padding: 0 4px;
   border-radius: 4px;
   font-size: 10px;
 }
-.min-count {
+
+.hud-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-left: auto;
+}
+
+/* --- Wallet: Parchment Box --- */
+.wallet-box {
+  min-width: 92px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: #fbe9e7;
+  border: 3px solid #5d4037;
+  display: grid;
+  gap: 0px;
+  text-align: center;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.wallet-label {
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: #8d6e63;
+}
+
+#wallet-amount {
+  font-weight: 900;
+  color: #2e7d32;
+  font-size: 1.1rem;
+}
+
+.clock-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* --- Clock: Classic Console Style --- */
+.clock-sun,
+.clock-moon {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  background: rgba(255,0,0,0.6);
-  color: white;
-  padding: 0 4px;
-  border-radius: 4px;
-  font-size: 10px;
+  top: 6px;
+  font-size: 16px;
+  line-height: 1;
+  opacity: 1;
+  z-index: 5;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.2);
+}
+
+.clock-sun { left: 8px; color: #f9a825; }
+.clock-moon { right: 8px; color: #5c6bc0; }
+
+.clock-face {
+  position: relative;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: #fbe9e7; /* Paper center */
+  border: 5px solid #5d4037; /* Wooden frame */
+  overflow: hidden;
+  box-shadow: 0 3px 0 #3e2723;
+}
+
+.clock-hand {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 28px;
+  height: 6px;
+  border-radius: 2px;
+  background: #d84315; /* Red indicator */
+  transform-origin: 0% 50%;
+  transform: translate(0, -50%) rotate(180deg);
+}
+
+.clock-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #5d4037;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+}
+
+/* --- Shop & Results (Unchanged styles) --- */
+.shop-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 10, 12, 0.72);
+  z-index: 30;
+}
+
+.shop-overlay.hidden {
+  display: none;
+}
+
+.shop-card {
+  width: min(420px, 82vw);
+  padding: 20px 18px 14px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(24, 28, 22, 0.97), rgba(12, 15, 12, 0.97));
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 30px 80px rgba(0,0,0,0.55);
+  color: #eef2df;
+}
+
+.shop-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.npc-portrait {
+  position: relative;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #f0d4b8, #d9a67b);
+  overflow: visible;
+  border: 2px solid rgba(255,255,255,0.1);
+}
+
+.npc-face {
+  position: absolute;
+  left: 50%;
+  top: 28%;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #f4d8ba;
+  transform: translateX(-50%);
+}
+
+.npc-hair {
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  width: 40px;
+  height: 22px;
+  border-radius: 16px 16px 12px 12px;
+  background: #18c251;
+  transform: translateX(-50%);
+  box-shadow: inset 0 -4px 0 rgba(255,255,255,0.04);
+}
+
+.shop-title-wrap {
+  display: flex;
+  align-items: center;
+}
+
+.shop-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #f2d88c;
+}
+
+.shop-options {
+  display: grid;
+  gap: 10px;
+}
+
+.shop-button {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #2d3930, #1b221a);
+  color: #f4f4ee;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.shop-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255,255,255,0.16);
+}
+
+.shop-button:active {
+  transform: translateY(0);
+}
+
+.shop-dialogue {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #dfe7c5;
+  font-size: 0.96rem;
+  text-align: center;
+  font-style: italic;
+}
+
+.results-screen {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(9, 10, 12, 0.7);
+  z-index: 20;
+}
+
+.results-screen.hidden {
+  display: none;
+}
+
+.results-card {
+  width: min(360px, 80vw);
+  padding: 22px 20px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(28, 31, 25, 0.97), rgba(18, 22, 18, 0.96));
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #eef3df;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+}
+
+.results-card h2 {
+  margin: 0 0 12px;
+  font-size: 1.7rem;
+  color: #f2d88c;
+}
+
+.results-card p {
+  margin: 8px 0;
+  font-size: 1rem;
+}
+
+#next-day-button {
+  width: 100%;
+  margin-top: 14px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #c8a63f, #a87e1a);
+  color: #221b0d;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
 }
