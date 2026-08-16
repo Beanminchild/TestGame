@@ -8,26 +8,73 @@
   </head>
   <body>
     <div class="shell">
-      <div class="hud">
-        <h1>Isometric Field Prototype</h1>
-        <p>Move: Arrow keys • Click to use tools/throw • E to interact/harvest</p>
-      </div>
+    <div class="hud">
+      <h1>Isometric Field Prototype</h1>
+      <p>Move: Arrow keys • Click to use tools/throw • E to interact/harvest</p>
 
-      <canvas id="game" width="960" height="640"></canvas>
+      <div class="hud-right">
+        <div class="wallet-box">
+          <span class="wallet-label">Wallet</span>
+          <span id="wallet-amount">0g</span>
+        </div>
 
-      <div class="inventory">
-        <button class="tool-slot active" data-tool="hoe">🪓 Hoe</button>
-        <button class="tool-slot" data-tool="seeds">🌱 Seeds</button>
-        <button class="tool-slot" data-tool="watering-can">💧 Water</button>
-        <button class="tool-slot" data-tool="min">🧑‍🌾 Min</button>
-        
-        <button class="tool-slot" data-tool="empty-hands">✋ Hands</button>
-        <div class="crop-counter">
-          🧺 Collected: <span id="crop-count">0</span>
+        <div class="clock-box">
+          <div id="clock-face" class="clock-face">
+            <div class="clock-sun">☀</div>
+            <div class="clock-moon">☾</div>
+            <div id="clock-hand" class="clock-hand"></div>
+            <div class="clock-center"></div>
+          </div>
+        </div>
         </div>
       </div>
     </div>
 
+    <canvas id="game" width="960" height="640"></canvas>
+
+    <div class="inventory">
+      <button class="tool-slot active" data-tool="hoe">🪓 Hoe</button>
+      <button class="tool-slot" data-tool="seeds">🌱 Seeds</button>
+      <button class="tool-slot" data-tool="watering-can">💧 Water</button>
+      <button class="tool-slot" data-tool="min">🧑‍🌾 Min</button>
+      <button class="tool-slot" data-tool="empty-hands">✋ Hands</button>
+
+      <div class="crop-counter">
+        🧺 Collected: <span id="crop-count">0</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="shop-overlay" class="shop-overlay hidden">
+    <div class="shop-card">
+      <div class="shop-header">
+        <div class="npc-portrait">
+          <div class="npc-hair"></div>
+          <div class="npc-face"></div>
+        </div>
+        <div class="shop-title-wrap">
+          <div class="shop-title">Merchant</div>
+        </div>
+      </div>
+
+      <div class="shop-options">
+        <button class="shop-button" data-buy-item="seeds">Buy Seeds — 5g</button>
+        <button class="shop-button" data-buy-item="min">Buy Min — 35g</button>
+      </div>
+
+      <div class="shop-dialogue">Hello Max, Darling</div>
+    </div>
+  </div>
+
+  <div id="results-screen" class="results-screen hidden">
+    <div class="results-card">
+      <h2>Day Complete</h2>
+      <p>You collected <strong id="results-collected">0</strong> items.</p>
+      <p>Payday: <strong id="results-payout">0g</strong></p>
+      <p>Wallet: <strong id="results-wallet">0g</strong></p>
+      <button id="next-day-button">Start Next Day</button>
+    </div>
+  </div>
     <script type="module" src="./src/game.js"></script>
   </body>
 </html>

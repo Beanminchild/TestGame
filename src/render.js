@@ -414,6 +414,33 @@ export function drawButton(ctx, button, camera) {
   ctx.restore();
 }
 
+export function drawShopNpc(ctx, npc, camera) {
+  if (!npc) return;
+
+  const p = isoToScreen(npc.col, npc.row, camera);
+
+  ctx.save();
+  ctx.translate(p.x, p.y - 12);
+
+  ctx.fillStyle = "#111111";
+  ctx.beginPath();
+  ctx.arc(0, -18, 10, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#d9a67b";
+  ctx.beginPath();
+  ctx.arc(0, -10, 10, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#111111";
+  ctx.fillRect(-10, -22, 20, 12);
+
+  ctx.fillStyle = "#1c1f1d";
+  ctx.fillRect(-12, -2, 24, 18);
+
+  ctx.restore();
+}
+
 export function drawCursor(ctx, cursor, camera) {
   if (!cursor) return;
 
@@ -438,8 +465,27 @@ export function drawCursor(ctx, cursor, camera) {
   ctx.restore();
 }
 
+export function getTimeTint(progress) {
+  const p = Math.min(1, Math.max(0, progress ?? 0));
+
+  if (p < 0.18) {
+    return { r: 255, g: 214, b: 130, a: 0.18 };
+  }
+  if (p < 0.45) {
+    return { r: 255, g: 172, b: 92, a: 0.12 };
+  }
+  if (p < 0.72) {
+    return { r: 130, g: 92, b: 160, a: 0.18 };
+  }
+  return { r: 42, g: 22, b: 74, a: 0.42 };
+}
+
 export function drawScene(ctx, canvas, character, spriteBank, camera, button, mins, cursor, world) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const tint = getTimeTint(world.dayProgress || 0);
+  ctx.fillStyle = `rgba(${tint.r}, ${tint.g}, ${tint.b}, ${tint.a})`;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   const order = [];
   for (let r = 0; r < rows; r++) {
@@ -465,6 +511,7 @@ export function drawScene(ctx, canvas, character, spriteBank, camera, button, mi
   drawDominion(ctx, world.dominion, camera);
   drawWaterPond(ctx, world.pond, camera);
   drawButton(ctx, button, camera);
+  drawShopNpc(ctx, world.shopNpc, camera);
 
   for (const min of mins) {
     if (min.state !== "delivered") {

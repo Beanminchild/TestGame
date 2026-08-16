@@ -86,14 +86,37 @@ export function createWorld() {
     box: createBox(),
     dominion: createDominion(),
     pond: { col: WATER_POND_COL, row: WATER_POND_ROW },
+    shopNpc: { col: 9, row: 7 },
+    shopOpen: false,
     mins,
     tiles,
     selectedTool: TOOL_TYPES.HOE,
     cropsCollected: 0,
     waterCanFillAmount: 5,
-    isRefillingWater: false, 
-    refillTimer: 0
+    isRefillingWater: false,
+    refillTimer: 0,
+    seedInventory: 0,
+    minInventory: 0,
+
+    dayLengthMs: 5 * 60 * 1000,
+    dayElapsedMs: 0,
+    dayProgress: 0,
+    dayNumber: 1,
+    wallet: 0,
+    dayEnded: false
   };
+}
+
+export function tryInteractWithShop(character, world) {
+  if (!world.shopNpc) return false;
+
+  const distance = Math.hypot(character.col - world.shopNpc.col, character.row - world.shopNpc.row);
+  if (distance <= 1.6) {
+    world.shopOpen = true;
+    return true;
+  }
+
+  return false;
 }
 
 
