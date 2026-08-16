@@ -219,7 +219,8 @@ export function drawWaterPond(ctx, pond, camera) {
 }
 
 
-function buildSpriteFrame(directionIndex, frameIndex) {
+function buildSpriteFrame(directionIndex, frameIndex, look = PLACEHOLDER_LOOK, options = {}) {
+  const { showPigtails = true } = options;
   const sprite = document.createElement("canvas");
   sprite.width = 64;
   sprite.height = 64;
@@ -238,7 +239,7 @@ function buildSpriteFrame(directionIndex, frameIndex) {
   const hx = 32 + style.headOffsetX;
   const hy = 20 + style.headOffsetY;
 
-  g.fillStyle = PLACEHOLDER_LOOK.hair;
+  g.fillStyle = look.hair;
   const ptBounce = walkPose.legSwing * 0.5;
   
   function drawPigtail(x, y, isFront) {
@@ -248,15 +249,15 @@ function buildSpriteFrame(directionIndex, frameIndex) {
     g.fillStyle = "#f4d683";
     g.fillRect(x - 3, y - 1 + ptBounce, 6, 2);
     g.fillRect(x - 1, y - 3 + ptBounce, 2, 6);
-    g.fillStyle = PLACEHOLDER_LOOK.hair;
+    g.fillStyle = look.hair;
   }
 
-  if (directionIndex === 6 || directionIndex === 5 || directionIndex === 7) {
+  if (showPigtails && (directionIndex === 6 || directionIndex === 5 || directionIndex === 7)) {
     drawPigtail(hx - 9, hy + 2, false);
     drawPigtail(hx + 9, hy + 2, true);
   }
 
-  g.strokeStyle = PLACEHOLDER_LOOK.pants;
+  g.strokeStyle = look.pants;
   g.lineWidth = 5;
   g.lineCap = "round";
   g.beginPath();
@@ -268,7 +269,7 @@ function buildSpriteFrame(directionIndex, frameIndex) {
 
   const bodyGrad = g.createRadialGradient(bx - 3, by - 3, 2, bx, by, 12);
   bodyGrad.addColorStop(0, "#7a95eb");
-  bodyGrad.addColorStop(1, PLACEHOLDER_LOOK.coat);
+  bodyGrad.addColorStop(1, look.coat);
   g.fillStyle = bodyGrad;
   g.beginPath();
   g.ellipse(bx, by, 9, 11, 0, 0, Math.PI * 2);
@@ -276,13 +277,13 @@ function buildSpriteFrame(directionIndex, frameIndex) {
 
   const headGrad = g.createRadialGradient(hx - 2, hy - 2, 2, hx, hy, 10);
   headGrad.addColorStop(0, "#ffe0c2");
-  headGrad.addColorStop(1, PLACEHOLDER_LOOK.skin);
+  headGrad.addColorStop(1, look.skin);
   g.fillStyle = headGrad;
   g.beginPath();
   g.arc(hx, hy, 8.5, 0, Math.PI * 2);
   g.fill();
 
-  g.fillStyle = PLACEHOLDER_LOOK.hair;
+  g.fillStyle = look.hair;
   g.beginPath();
   g.arc(hx, hy - 1, 9, Math.PI, 0);
   g.fill();
@@ -295,13 +296,15 @@ function buildSpriteFrame(directionIndex, frameIndex) {
     g.fill();
   }
 
-  if (directionIndex >= 1 && directionIndex <= 3) {
-    drawPigtail(hx - 10, hy + 2, false);
-    drawPigtail(hx + 10, hy + 2, true);
-  } else if (directionIndex === 0) {
-    drawPigtail(hx - 2, hy + 2, false);
-  } else if (directionIndex === 4) {
-    drawPigtail(hx + 2, hy + 2, true);
+  if (showPigtails) {
+    if (directionIndex >= 1 && directionIndex <= 3) {
+      drawPigtail(hx - 10, hy + 2, false);
+      drawPigtail(hx + 10, hy + 2, true);
+    } else if (directionIndex === 0) {
+      drawPigtail(hx - 2, hy + 2, false);
+    } else if (directionIndex === 4) {
+      drawPigtail(hx + 2, hy + 2, true);
+    }
   }
 
   g.fillStyle = "#333";
@@ -331,12 +334,12 @@ function buildSpriteFrame(directionIndex, frameIndex) {
   return sprite;
 }
 
-export function createSpriteBank() {
+export function createSpriteBank(look = PLACEHOLDER_LOOK, options = {}) {
   const bank = [];
   for (let dir = 0; dir < 8; dir++) {
     const frames = [];
     for (let frame = 0; frame < 2; frame++) {
-      frames.push(buildSpriteFrame(dir, frame));
+      frames.push(buildSpriteFrame(dir, frame, look, options));
     }
     bank.push(frames);
   }
@@ -414,33 +417,6 @@ export function drawButton(ctx, button, camera) {
   ctx.restore();
 }
 
-export function drawShopNpc(ctx, npc, camera) {
-  if (!npc) return;
-
-  const p = isoToScreen(npc.col, npc.row, camera);
-
-  ctx.save();
-  ctx.translate(p.x, p.y - 12);
-
-  ctx.fillStyle = "#111111";
-  ctx.beginPath();
-  ctx.arc(0, -18, 10, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = "#d9a67b";
-  ctx.beginPath();
-  ctx.arc(0, -10, 10, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = "#111111";
-  ctx.fillRect(-10, -22, 20, 12);
-
-  ctx.fillStyle = "#1c1f1d";
-  ctx.fillRect(-12, -2, 24, 18);
-
-  ctx.restore();
-}
-
 export function drawCursor(ctx, cursor, camera) {
   if (!cursor) return;
 
@@ -480,7 +456,7 @@ export function getTimeTint(progress) {
   return { r: 42, g: 22, b: 74, a: 0.42 };
 }
 
-export function drawScene(ctx, canvas, character, spriteBank, camera, button, mins, cursor, world) {
+export function drawScene(ctx, canvas, character, spriteBank, camera, button, mins, cursor, world, shopkeeper, shopkeeperSpriteBank) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   const tint = getTimeTint(world.dayProgress || 0);
@@ -511,7 +487,7 @@ export function drawScene(ctx, canvas, character, spriteBank, camera, button, mi
   drawDominion(ctx, world.dominion, camera);
   drawWaterPond(ctx, world.pond, camera);
   drawButton(ctx, button, camera);
-  drawShopNpc(ctx, world.shopNpc, camera);
+  drawCharacter(ctx, shopkeeper, shopkeeperSpriteBank, camera);
 
   for (const min of mins) {
     if (min.state !== "delivered") {

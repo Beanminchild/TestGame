@@ -25,9 +25,10 @@ import {
   REFILL_RATE_MS,
   WATER_POND_COL,
   WATER_POND_ROW,
-  WATER_POND_INTERACTION_RADIUS
-
- 
+  WATER_POND_INTERACTION_RADIUS,
+  SHOPKEEPER_COL,
+  SHOPKEEPER_ROW,
+  SEED_MAX
 } from "./constants.js";
 
 let waterCanFillAmount = 5;
@@ -86,13 +87,13 @@ export function createWorld() {
     box: createBox(),
     dominion: createDominion(),
     pond: { col: WATER_POND_COL, row: WATER_POND_ROW },
-    shopNpc: { col: 9, row: 7 },
     shopOpen: false,
     mins,
     tiles,
     selectedTool: TOOL_TYPES.HOE,
     cropsCollected: 0,
     waterCanFillAmount: 5,
+    seedsCollected: 0,
     isRefillingWater: false,
     refillTimer: 0,
     seedInventory: 0,
@@ -102,15 +103,15 @@ export function createWorld() {
     dayElapsedMs: 0,
     dayProgress: 0,
     dayNumber: 1,
-    wallet: 0,
+    wallet: 25,
     dayEnded: false
   };
 }
 
 export function tryInteractWithShop(character, world) {
-  if (!world.shopNpc) return false;
+  if (!world.shopkeeper) return false;
 
-  const distance = Math.hypot(character.col - world.shopNpc.col, character.row - world.shopNpc.row);
+  const distance = Math.hypot(character.col - world.shopkeeper.col, character.row - world.shopkeeper.row);
   if (distance <= 1.6) {
     world.shopOpen = true;
     return true;
@@ -450,12 +451,13 @@ export function useToolAtCursor(world, cursor) {
   }
 
   if (world.selectedTool === TOOL_TYPES.SEEDS) {
-    if (tile.type === TILE_TYPES.DIRT && !tile.planted) {
+    if (tile.type === TILE_TYPES.DIRT && !tile.planted && world.seedInventory > 0) {
       tile.planted = true;
       tile.watered = false;
       tile.growth = 0;
       tile.growDuration = GROWTH_DURATION_MIN + Math.random() * (GROWTH_DURATION_MAX - GROWTH_DURATION_MIN);
       tile.stage = PLANT_STAGES.SEED;
+      world.seedInventory -= 1;
       return true;
     }
     return false;

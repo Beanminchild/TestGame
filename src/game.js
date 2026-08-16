@@ -17,7 +17,7 @@ import {
   tryInteractWithShop,
   spawnNewMin
 } from "./interactions.js";
-import { TOOL_TYPES } from "./constants.js";
+import { TOOL_TYPES, SHOPKEEPER_LOOK, SHOPKEEPER_COL, SHOPKEEPER_ROW } from "./constants.js";
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -25,7 +25,12 @@ const ctx = canvas.getContext("2d");
 const keys = setupInput();
 const character = createCharacter();
 const spriteBank = createSpriteBank();
+const shopkeeper = createCharacter();
+shopkeeper.col = SHOPKEEPER_COL;
+shopkeeper.row = SHOPKEEPER_ROW;
+const shopkeeperSpriteBank = createSpriteBank(SHOPKEEPER_LOOK, { showPigtails: false });
 const world = createWorld();
+world.shopkeeper = shopkeeper;
 
 if (!world.selectedTool) {
   world.selectedTool = TOOL_TYPES.MIN;
@@ -144,6 +149,27 @@ function syncHUD() {
         slot.appendChild(countBadge);
       }
       countBadge.textContent = world.waterCanFillAmount;
+    }
+    if (toolName === "seeds") {
+      let countBadge = slot.querySelector(".item-count");
+      if (!countBadge) {
+        countBadge = document.createElement("span");
+        countBadge.className = "item-count";
+        Object.assign(countBadge.style, {
+          position: 'absolute',
+          bottom: '2px',
+          right: '2px',
+          background: 'rgba(0,0,0,0.6)',
+          color: 'white',
+          padding: '0 4px',
+          borderRadius: '4px',
+          fontSize: '10px',
+          pointerEvents: 'none'
+        });
+        slot.style.position = 'relative';
+        slot.appendChild(countBadge);
+      }
+      countBadge.textContent = world.seedInventory || 0;
     }
   });
 
@@ -324,10 +350,10 @@ function loop(timestamp) {
 
   syncHUD();
   camera = updateCamera(canvas, character);
-  drawScene(ctx, canvas, character, spriteBank, camera, button, mins, cursor, world);
+  drawScene(ctx, canvas, character, spriteBank, camera, button, mins, cursor, world, shopkeeper, shopkeeperSpriteBank);
 
   requestAnimationFrame(loop);
 }
 
-drawScene(ctx, canvas, character, spriteBank, camera, button, mins, cursor, world);
+drawScene(ctx, canvas, character, spriteBank, camera, button, mins, cursor, world, shopkeeper, shopkeeperSpriteBank);
 requestAnimationFrame(loop);
