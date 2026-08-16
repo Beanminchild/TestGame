@@ -444,16 +444,20 @@ export function drawCursor(ctx, cursor, camera) {
 export function getTimeTint(progress) {
   const p = Math.min(1, Math.max(0, progress ?? 0));
 
-  if (p < 0.18) {
-    return { r: 255, g: 214, b: 130, a: 0.18 };
+  // Dawn (0% - 20%)
+  if (p < 0.2) {
+    return { r: 255, g: 240, b: 180, a: 0.15 };
   }
-  if (p < 0.45) {
-    return { r: 255, g: 172, b: 92, a: 0.12 };
+  // Full Day (20% - 60%) - Clear/No tint
+  if (p < 0.6) {
+    return { r: 255, g: 255, b: 255, a: 0 };
   }
-  if (p < 0.72) {
-    return { r: 130, g: 92, b: 160, a: 0.18 };
+  // Dusk (60% - 80%)
+  if (p < 0.8) {
+    return { r: 255, g: 130, b: 80, a: 0.4 };
   }
-  return { r: 42, g: 22, b: 74, a: 0.42 };
+  // Night (80% - 100%)
+  return { r: 40, g: 40, b: 120, a: 0.5 };
 }
 
 export function drawScene(ctx, canvas, character, spriteBank, camera, button, mins, cursor, world, shopkeeper, shopkeeperSpriteBank) {
@@ -483,6 +487,21 @@ export function drawScene(ctx, canvas, character, spriteBank, camera, button, mi
     drawPlantOverlay(ctx, tile, c, r, camera);
   }
 
+
+    // time cycle tint over world 
+  //const tint = getTimeTint(world.dayProgress || 0);
+  if (tint.a > 0) {
+    ctx.save();
+    // 'multiply' makes the world look naturally darker/tinted
+    // 'source-over' (default) just adds a colored film
+    if (world.dayProgress > 0.6) {
+        ctx.globalCompositeOperation = 'multiply';
+    }
+    ctx.fillStyle = `rgba(${tint.r}, ${tint.g}, ${tint.b}, ${tint.a})`;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+  }
+
   drawBox(ctx, world.box, camera);
   drawDominion(ctx, world.dominion, camera);
   drawWaterPond(ctx, world.pond, camera);
@@ -495,6 +514,9 @@ export function drawScene(ctx, canvas, character, spriteBank, camera, button, mi
     }
   }
 
+ 
+
   drawCursor(ctx, cursor, camera);
   drawCharacter(ctx, character, spriteBank, camera);
+   
 }
